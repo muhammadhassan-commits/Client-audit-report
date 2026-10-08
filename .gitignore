@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.DS_Store
+
+# Audit output is client data and is generated at runtime, never committed.
+out/*
+!out/.gitkeep

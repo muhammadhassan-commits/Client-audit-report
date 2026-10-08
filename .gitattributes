@@ -1,0 +1,3 @@
+# Keep LF in the repository. The Docker build runs these on Linux.
+* text=auto eol=lf
+*.png binary

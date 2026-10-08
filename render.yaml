@@ -1,0 +1,25 @@
+# Render blueprint. Create the service with Blueprints > New, pointed at this
+# repo, then set the three secret values in the dashboard.
+services:
+  - type: web
+    name: wellows-site-audit
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter          # a disk requires a paid plan; free has no disk
+    healthCheckPath: /healthz
+    autoDeploy: false
+    disk:
+      name: audit-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: AUDIT_API_TOKEN          # generate one, 32+ random chars
+        sync: false
+      - key: AUDIT_ALLOWED_DOMAINS    # e.g. wellows.com,socialchamp.com
+        sync: false
+      - key: PSI_API_KEY              # PageSpeed Insights key
+        sync: false
+      - key: AUDIT_OUT_DIR
+        value: /data/out
+      - key: AUDIT_MAX_CONCURRENT
+        value: "1"

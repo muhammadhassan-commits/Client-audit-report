@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 scripts/*)",
+      "Bash(python3 -m pip install *)",
+      "Bash(python3 -m playwright install chromium)",
+      "Bash(python3 -c *)",
+      "Bash(curl -sS *)",
+      "Bash(curl -s *)",
+      "Bash(curl -I *)",
+      "Read(./**)",
+      "Write(./out/**)",
+      "Edit(./out/**)",
+      "WebSearch"
+    ]
+  }
+}
