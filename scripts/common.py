@@ -14,6 +14,31 @@ from urllib.parse import urlparse
 import requests
 
 KIT_DIR = Path(__file__).resolve().parent.parent
+
+
+def load_dotenv():
+    """Read KIT_DIR/.env into the environment if the file is there.
+
+    A real environment variable always wins, so a value set in Render's
+    dashboard is never overridden by a file that ended up in the image.
+    """
+    path = KIT_DIR / ".env"
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        value = value.strip()
+        if len(value) > 1 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        if key.strip():
+            os.environ.setdefault(key.strip(), value)
+
+
+load_dotenv()
+
 # Where evidence and reports land. Override with AUDIT_OUT_DIR to point at a
 # mounted disk when the kit runs as a service. Unset, it is the repo's out/.
 OUT_ROOT = Path(os.environ.get("AUDIT_OUT_DIR") or (KIT_DIR / "out"))
