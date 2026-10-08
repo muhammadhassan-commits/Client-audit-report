@@ -19,11 +19,13 @@ Environment:
 """
 import json
 import os
+import re
 import secrets
 import subprocess
 import sys
 import threading
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,12 +39,25 @@ sys.path.insert(0, str(SCRIPTS))
 from common import OUT_ROOT, normalize_domain  # noqa: E402
 
 LOG_DIR = OUT_ROOT / "_jobs"
+# normalize_domain is permissive by design, so junk like "!!!" survives it and
+# would otherwise be refused by the allowlist with a misleading message. A
+# hostname also becomes a directory name under OUT_ROOT, so it is checked here.
+HOSTNAME = re.compile(r"^(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))+$")
 MAX_CONCURRENT = int(os.environ.get("AUDIT_MAX_CONCURRENT", "1"))
 _slots = threading.Semaphore(MAX_CONCURRENT)
 _jobs = {}
 _jobs_lock = threading.Lock()
 
-app = FastAPI(title="Wellows site audit", docs_url=None, redoc_url=None)
+@asynccontextmanager
+async def lifespan(_app):
+    load_jobs()
+    yield
+
+
+# openapi_url is off as well as the doc pages: the schema would otherwise list
+# every route to anyone who finds the URL.
+app = FastAPI(title="Wellows site audit", docs_url=None, redoc_url=None,
+              openapi_url=None, lifespan=lifespan)
 
 
 # ---------------------------------------------------------------- auth, input
@@ -144,8 +159,35 @@ def _now():
 
 
 def _set(job, **kw):
+    """Update a job and mirror it to disk.
+
+    Instances restart, and the evidence on the disk would otherwise be orphaned
+    with no job record pointing at it.
+    """
     with _jobs_lock:
         job.update(kw)
+        snapshot = dict(job)
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        (LOG_DIR / f"{snapshot['id']}.json").write_text(
+            json.dumps(snapshot, indent=2), encoding="utf-8")
+    except OSError:
+        pass  # a lost status file must not fail the audit itself
+
+
+def load_jobs():
+    """Re-read job records written before the last restart."""
+    if not LOG_DIR.is_dir():
+        return
+    for p in LOG_DIR.glob("*.json"):
+        try:
+            job = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if job.get("status") in ("queued", "running"):
+            job["status"] = "interrupted"
+            job["error"] = "The instance restarted while this audit was running."
+        _jobs.setdefault(job["id"], job)
 
 
 # ------------------------------------------------------------------ the routes
@@ -165,8 +207,8 @@ def healthz():
 @app.post("/audits", dependencies=[Depends(require_token)], status_code=202)
 def start_audit(req: AuditRequest):
     domain = normalize_domain(req.domain)
-    if not domain:
-        raise HTTPException(400, "Could not read a hostname from that value")
+    if not domain or len(domain) > 253 or not HOSTNAME.match(domain):
+        raise HTTPException(400, f"Not a hostname: {req.domain[:80]!r}")
     check_authorized(domain)
     with _jobs_lock:
         busy = [j for j in _jobs.values()
@@ -250,7 +292,7 @@ def get_report(job_id: str):
 
 @app.get("/", response_class=HTMLResponse)
 def console():
-    allow = allowed_domains()
+    # Unauthenticated: it names no domain, no job and no client.
     return f"""<!doctype html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Wellows site audit</title>
 <style>
@@ -265,7 +307,7 @@ def console():
 <h1>Wellows site audit</h1>
 <p class="mut">Evidence collection over HTTP. Every route below needs
 <code>Authorization: Bearer &lt;AUDIT_API_TOKEN&gt;</code>.</p>
-<p>Allowed domains: <code>{", ".join(allow) if allow else "none set, audits will be refused"}</code></p>
+<p>Audits are limited to the hosts in <code>AUDIT_ALLOWED_DOMAINS</code>. Any other host is refused.</p>
 <table>
 <tr><th>Route</th><th>Does</th></tr>
 <tr><td><code>POST /audits</code></td><td>Start a run. Body: <code>{{"domain":"example.com"}}</code></td></tr>
