@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wellows site audit</title>
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#fff; --panel:#fff; --fg:#13151a; --mut:#5f6673; --line:#e3e6ea;
+  --accent:#2f6df6; --good:#0f8a5f; --warn:#b4690e; --bad:#c3372b; --soft:#f6f7f9;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0f1115; --panel:#161920; --fg:#e8eaed; --mut:#9aa2b1; --line:#262b35;
+        --accent:#6a9bff; --good:#3fbd8c; --warn:#e0a64a; --bad:#ef6a5d; --soft:#1b1f27;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:60rem;margin:0 auto;padding:2rem 1rem 4rem}
+h1{font-size:1.5rem;margin:0 0 .25rem}
+.sub{color:var(--mut);margin:0 0 1.75rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:1.25rem;margin-bottom:1.25rem}
+.card h2{font-size:1rem;margin:0 0 1rem;letter-spacing:.01em}
+label{display:block;font-size:.8rem;color:var(--mut);margin-bottom:.3rem}
+input[type=text],input[type=password],input[type=number],select{
+  width:100%;padding:.55rem .7rem;border:1px solid var(--line);border-radius:7px;
+  background:var(--bg);color:var(--fg);font:inherit}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+button{background:var(--accent);color:#fff;border:0;border-radius:7px;
+  padding:.55rem 1.1rem;font:inherit;font-weight:500;cursor:pointer}
+button:hover{filter:brightness(1.08)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end}
+.row>div{flex:1;min-width:9rem}
+.opts{display:flex;gap:1.25rem;margin:.9rem 0 0;font-size:.85rem;color:var(--mut)}
+.opts label{display:flex;gap:.4rem;align-items:center;margin:0;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{text-align:left;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--mut);font-weight:600;padding:.4rem .5rem;border-bottom:1px solid var(--line)}
+td{padding:.6rem .5rem;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.sel td{background:var(--soft)}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--soft)}
+.pill{display:inline-block;padding:.15rem .55rem;border-radius:99px;font-size:.75rem;
+  font-weight:600;border:1px solid currentColor}
+.p-queued,.p-running{color:var(--warn)}
+.p-collected{color:var(--accent)}
+.p-reported{color:var(--good)}
+.p-unreachable,.p-failed,.p-interrupted,.p-findings_rejected{color:var(--bad)}
+pre{background:var(--soft);border:1px solid var(--line);border-radius:7px;padding:.75rem;
+  overflow:auto;max-height:17rem;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;margin:0}
+.files{display:flex;flex-wrap:wrap;gap:.4rem;margin:0;padding:0;list-style:none}
+.files a{font:12px ui-monospace,monospace;text-decoration:none;color:var(--fg);
+  border:1px solid var(--line);border-radius:5px;padding:.2rem .5rem;background:var(--soft)}
+.files a:hover{border-color:var(--accent);color:var(--accent)}
+.msg{padding:.7rem .9rem;border-radius:7px;font-size:.88rem;margin-bottom:1rem}
+.msg.err{background:color-mix(in srgb,var(--bad) 12%,transparent);
+  border:1px solid var(--bad);color:var(--bad)}
+.msg.ok{background:color-mix(in srgb,var(--good) 12%,transparent);
+  border:1px solid var(--good);color:var(--good)}
+.mut{color:var(--mut)}
+.small{font-size:.82rem}
+.hide{display:none}
+.spin{display:inline-block;width:.7rem;height:.7rem;border:2px solid currentColor;
+  border-right-color:transparent;border-radius:50%;animation:s .7s linear infinite;
+  vertical-align:-1px;margin-right:.35rem}
+@keyframes s{to{transform:rotate(360deg)}}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.75rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="bar">
+    <div>
+      <h1>Wellows site audit</h1>
+      <p class="sub">Technical SEO, AEO, GEO and LLM crawler accessibility. 133 checks.</p>
+    </div>
+    <button class="ghost small hide" id="signout">Sign out</button>
+  </div>
+
+  <!-- gate -->
+  <div class="card" id="gate">
+    <h2>Access token</h2>
+    <div id="gate-msg"></div>
+    <div class="row">
+      <div><label for="tok">Paste the token for this service</label>
+        <input type="password" id="tok" autocomplete="current-password" placeholder="64 characters"></div>
+      <button id="gate-go">Continue</button>
+    </div>
+    <p class="mut small" style="margin:.9rem 0 0">Held in this browser only. It is never sent anywhere but this service.</p>
+  </div>
+
+  <!-- app -->
+  <div id="app" class="hide">
+    <div class="card">
+      <h2>Run an audit</h2>
+      <div id="start-msg"></div>
+      <div class="row">
+        <div style="flex:2"><label for="domain">Domain</label>
+          <input type="text" id="domain" placeholder="example.com" autocomplete="off"></div>
+        <div style="max-width:8rem"><label for="pages">Max pages</label>
+          <input type="number" id="pages" value="150" min="1" max="1000"></div>
+        <button id="go">Start</button>
+      </div>
+      <div class="opts">
+        <label><input type="checkbox" id="skip-psi"> Skip PageSpeed</label>
+        <label><input type="checkbox" id="skip-render"> Skip rendering checks</label>
+        <span class="mut">A full run takes 10 to 20 minutes.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Audits</h2>
+      <div id="list"><p class="mut small">Loading...</p></div>
+    </div>
+
+    <div class="card hide" id="detail"></div>
+  </div>
+
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const KEY = "wellows-audit-token";
+let token = localStorage.getItem(KEY) || "";
+let selected = null;
+let timer = null;
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function note(el, text, kind) {
+  el.innerHTML = text ? `<div class="msg ${kind}">${esc(text)}</div>` : "";
+}
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, {
+    ...opts,
+    headers: {...(opts.headers || {}), Authorization: "Bearer " + token},
+  });
+  let body = null;
+  try { body = await r.json(); } catch (e) { /* not json */ }
+  if (!r.ok) {
+    const msg = (body && body.detail) || `HTTP ${r.status}`;
+    const err = new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    err.status = r.status; err.body = body;
+    throw err;
+  }
+  return body;
+}
+
+// link that carries the token, for plain navigation (downloads, the report)
+const linked = path => path + (path.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(token);
+
+function showApp(on) {
+  $("#gate").classList.toggle("hide", on);
+  $("#app").classList.toggle("hide", !on);
+  $("#signout").classList.toggle("hide", !on);
+}
+
+async function signIn(t) {
+  token = t;
+  await api("/audits");                      // probe: 401 throws
+  localStorage.setItem(KEY, token);
+  showApp(true);
+  refresh();
+}
+
+$("#gate-go").onclick = async () => {
+  const t = $("#tok").value.trim();
+  if (!t) return note($("#gate-msg"), "Enter the token.", "err");
+  note($("#gate-msg"), "");
+  try { await signIn(t); }
+  catch (e) {
+    token = "";
+    note($("#gate-msg"), e.status === 401 ? "That token was not accepted."
+       : e.status === 503 ? "The service has no AUDIT_API_TOKEN set yet." : e.message, "err");
+  }
+};
+$("#tok").addEventListener("keydown", e => { if (e.key === "Enter") $("#gate-go").click(); });
+
+$("#signout").onclick = () => {
+  localStorage.removeItem(KEY); token = ""; selected = null;
+  clearInterval(timer); showApp(false);
+};
+
+$("#go").onclick = async () => {
+  const domain = $("#domain").value.trim();
+  if (!domain) return note($("#start-msg"), "Enter a domain.", "err");
+  $("#go").disabled = true;
+  note($("#start-msg"), "");
+  try {
+    const job = await api("/audits", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        domain,
+        max_pages: Number($("#pages").value) || 150,
+        skip_psi: $("#skip-psi").checked,
+        skip_render: $("#skip-render").checked,
+      }),
+    });
+    $("#domain").value = "";
+    note($("#start-msg"), `Started ${job.domain}.`, "ok");
+    selected = job.id;
+    refresh();
+  } catch (e) {
+    note($("#start-msg"), e.message, "err");
+  } finally {
+    $("#go").disabled = false;
+  }
+};
+$("#domain").addEventListener("keydown", e => { if (e.key === "Enter") $("#go").click(); });
+
+const when = s => s ? new Date(s).toLocaleString() : "";
+const busy = st => st === "queued" || st === "running";
+
+function renderList(jobs) {
+  if (!jobs.length) {
+    $("#list").innerHTML = `<p class="mut small">No audits yet. Start one above.</p>`;
+    return;
+  }
+  $("#list").innerHTML = `<table><thead><tr>
+      <th>Domain</th><th>Status</th><th>Started</th><th></th></tr></thead><tbody>${
+    jobs.map(j => `<tr data-id="${esc(j.id)}" class="${j.id === selected ? "sel" : ""}">
+      <td><strong>${esc(j.domain)}</strong></td>
+      <td><span class="pill p-${esc(j.status)}">${busy(j.status) ? '<span class="spin"></span>' : ""}${esc(j.status)}</span></td>
+      <td class="mut small">${esc(when(j.started_at || j.created_at))}</td>
+      <td class="mut small">view</td></tr>`).join("")}</tbody></table>`;
+  $("#list").querySelectorAll("tr[data-id]").forEach(tr => {
+    tr.onclick = () => { selected = tr.dataset.id; refresh(); };
+  });
+}
+
+function renderDetail(j) {
+  const d = $("#detail");
+  d.classList.remove("hide");
+  const files = (j.evidence_files || []).map(f =>
+    `<li><a href="${linked(`/audits/${j.id}/files/data/${encodeURIComponent(f)}`)}" target="_blank" rel="noopener">${esc(f)}</a></li>`).join("");
+  d.innerHTML = `
+    <h2>${esc(j.domain)} <span class="pill p-${esc(j.status)}">${esc(j.status)}</span></h2>
+    ${j.error ? `<div class="msg err">${esc(j.error)}</div>` : ""}
+    ${j.report_ready ? `<p><a href="${linked(`/audits/${j.id}/report`)}" target="_blank" rel="noopener"><button>Open the report</button></a></p>` : ""}
+    ${files ? `<p class="mut small" style="margin:.2rem 0 .5rem">Evidence</p><ul class="files">${files}</ul>` : ""}
+    <p class="mut small" style="margin:1.1rem 0 .4rem">Log</p>
+    <pre id="log">${esc((j.log_tail || ["(nothing yet)"]).join("\n"))}</pre>
+    <div id="up" class="${j.status === "collected" || j.status === "reported" || j.status === "findings_rejected" ? "" : "hide"}">
+      <p class="mut small" style="margin:1.1rem 0 .4rem">
+        Upload findings.json to build the client report</p>
+      <div id="up-msg"></div>
+      <div class="row">
+        <div><input type="file" id="file" accept="application/json,.json"></div>
+        <button id="send">Build report</button>
+      </div>
+    </div>`;
+  const log = d.querySelector("#log"); log.scrollTop = log.scrollHeight;
+  const send = d.querySelector("#send");
+  if (send) send.onclick = async () => {
+    const f = d.querySelector("#file").files[0];
+    if (!f) return note(d.querySelector("#up-msg"), "Choose a findings.json file.", "err");
+    send.disabled = true;
+    note(d.querySelector("#up-msg"), "");
+    const fd = new FormData(); fd.append("file", f);
+    try {
+      await api(`/audits/${j.id}/findings`, {method: "POST", body: fd});
+      note(d.querySelector("#up-msg"), "Report built.", "ok");
+      refresh();
+    } catch (e) {
+      const probs = e.body && e.body.problems;
+      d.querySelector("#up-msg").innerHTML = probs
+        ? `<div class="msg err"><strong>The builder refused this file.</strong><pre style="margin-top:.5rem;max-height:11rem">${esc(probs.join("\n"))}</pre></div>`
+        : `<div class="msg err">${esc(e.message)}</div>`;
+    } finally { send.disabled = false; }
+  };
+}
+
+async function refresh() {
+  try {
+    const jobs = await api("/audits");
+    renderList(jobs);
+    if (selected) {
+      try { renderDetail(await api(`/audits/${selected}?log_lines=120`)); }
+      catch (e) { selected = null; $("#detail").classList.add("hide"); }
+    }
+    clearInterval(timer);
+    if (jobs.some(j => busy(j.status))) timer = setInterval(refresh, 5000);
+  } catch (e) {
+    if (e.status === 401) { localStorage.removeItem(KEY); token = ""; showApp(false); }
+  }
+}
+
+if (token) { signIn(token).catch(() => { localStorage.removeItem(KEY); token = ""; showApp(false); }); }
+else showApp(false);
+</script>
+</body>
+</html>

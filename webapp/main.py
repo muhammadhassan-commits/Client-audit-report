@@ -290,34 +290,15 @@ def get_report(job_id: str):
     return FileResponse(path, media_type="text/html")
 
 
+INDEX = Path(__file__).resolve().parent / "index.html"
+
+
 @app.get("/", response_class=HTMLResponse)
 def console():
-    # Unauthenticated: it names no domain, no job and no client.
-    return f"""<!doctype html><html lang="en"><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Wellows site audit</title>
-<style>
- :root{{color-scheme:light dark;--fg:#111;--mut:#666;--line:#ddd;--bg:#fff}}
- @media(prefers-color-scheme:dark){{:root{{--fg:#eee;--mut:#999;--line:#333;--bg:#141414}}}}
- body{{font:15px/1.6 system-ui,sans-serif;max-width:52rem;margin:0 auto;padding:2rem 1rem;color:var(--fg);background:var(--bg)}}
- code,pre{{font-family:ui-monospace,monospace;font-size:13px}}
- pre{{background:color-mix(in srgb,var(--fg) 6%,transparent);padding:.75rem;border-radius:6px;overflow-x:auto}}
- td,th{{border-bottom:1px solid var(--line);padding:.4rem .6rem;text-align:left}}
- .mut{{color:var(--mut)}}
-</style>
-<h1>Wellows site audit</h1>
-<p class="mut">Evidence collection over HTTP. Every route below needs
-<code>Authorization: Bearer &lt;AUDIT_API_TOKEN&gt;</code>.</p>
-<p>Audits are limited to the hosts in <code>AUDIT_ALLOWED_DOMAINS</code>. Any other host is refused.</p>
-<table>
-<tr><th>Route</th><th>Does</th></tr>
-<tr><td><code>POST /audits</code></td><td>Start a run. Body: <code>{{"domain":"example.com"}}</code></td></tr>
-<tr><td><code>GET /audits/{{id}}</code></td><td>Status, log tail, evidence file list</td></tr>
-<tr><td><code>GET /audits/{{id}}/files/data/crawl_summary.json</code></td><td>Any evidence file</td></tr>
-<tr><td><code>POST /audits/{{id}}/findings</code></td><td>Upload findings.json, builds the report or returns the validation errors</td></tr>
-<tr><td><code>GET /audits/{{id}}/report</code></td><td>The built client report</td></tr>
-</table>
-<pre>curl -X POST $HOST/audits -H "Authorization: Bearer $TOKEN" \\
-     -H "Content-Type: application/json" -d '{{"domain":"example.com"}}'</pre>
-<p class="mut">The service collects evidence. Writing findings.json is a judgement step
-made against that evidence, not an automated one.</p>
-</html>"""
+    """The browser UI.
+
+    Unauthenticated, because it is only a shell: it holds no domain, job or
+    client name. It asks for the token and calls the same API as everyone
+    else, so nothing is readable until a token is entered.
+    """
+    return INDEX.read_text(encoding="utf-8")
