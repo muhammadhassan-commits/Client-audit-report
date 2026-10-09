@@ -135,9 +135,13 @@ def title_slide(prs, fd):
 def summary_slide(prs, fd, counts, sev, n):
     s, top = slide_base(prs, "Executive summary", "The headline")
     es = fd["executive_summary"]
-    textbox(s, MARGIN, top, BODY_W, Inches(0.9), es["headline"], size=20,
-            bold=True, color=INK)
-    top += Inches(1.0)
+    # The headline is author-written and its length varies, so the block grows
+    # with it. A fixed height let a three-line headline run over the tiles.
+    head = fit(es["headline"], 320)
+    head_rows = max(1, -(-len(head) // 72))
+    head_h = Inches(0.37) * head_rows
+    textbox(s, MARGIN, top, BODY_W, head_h, head, size=20, bold=True, color=INK)
+    top += head_h + Inches(0.3)
 
     tiles = [("Pass", counts.get("Pass", 0), PASS),
              ("Issues", counts.get("Issue", 0), FAIL),
