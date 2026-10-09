@@ -13,7 +13,9 @@ services:
       mountPath: /data
       sizeGB: 1
     envVars:
-      - key: AUDIT_API_TOKEN          # generate one, 32+ random chars
+      - key: AUDIT_USERS              # email:password, comma separated
+        sync: false
+      - key: AUDIT_API_TOKEN          # optional, for scripts and CI only
         sync: false
       - key: AUDIT_ALLOWED_DOMAINS    # e.g. wellows.com,socialchamp.com
         sync: false

@@ -83,15 +83,19 @@ pre{background:var(--soft);border:1px solid var(--line);border-radius:7px;paddin
   </div>
 
   <!-- gate -->
-  <div class="card" id="gate">
-    <h2>Access token</h2>
+  <div class="card" id="gate" style="max-width:26rem">
+    <h2>Sign in</h2>
     <div id="gate-msg"></div>
-    <div class="row">
-      <div><label for="tok">Paste the token for this service</label>
-        <input type="password" id="tok" autocomplete="current-password" placeholder="64 characters"></div>
-      <button id="gate-go">Continue</button>
+    <div style="margin-bottom:.8rem">
+      <label for="email">Email</label>
+      <input type="text" id="email" autocomplete="username" placeholder="you@wellows.com">
     </div>
-    <p class="mut small" style="margin:.9rem 0 0">Held in this browser only. It is never sent anywhere but this service.</p>
+    <div style="margin-bottom:1rem">
+      <label for="pw">Password</label>
+      <input type="password" id="pw" autocomplete="current-password">
+    </div>
+    <button id="gate-go" style="width:100%">Sign in</button>
+    <p class="mut small" style="margin:.9rem 0 0">Your session stays in this browser for 7 days.</p>
   </div>
 
   <!-- app -->
@@ -162,26 +166,40 @@ function showApp(on) {
   $("#signout").classList.toggle("hide", !on);
 }
 
-async function signIn(t) {
+async function resume(t) {
   token = t;
-  await api("/audits");                      // probe: 401 throws
+  await api("/audits");                      // probe: an expired session throws
   localStorage.setItem(KEY, token);
   showApp(true);
   refresh();
 }
 
 $("#gate-go").onclick = async () => {
-  const t = $("#tok").value.trim();
-  if (!t) return note($("#gate-msg"), "Enter the token.", "err");
+  const email = $("#email").value.trim();
+  const password = $("#pw").value;
+  if (!email || !password) return note($("#gate-msg"), "Enter your email and password.", "err");
+  $("#gate-go").disabled = true;
   note($("#gate-msg"), "");
-  try { await signIn(t); }
-  catch (e) {
+  try {
+    const r = await fetch("/login", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({email, password}),
+    });
+    const body = await r.json().catch(() => null);
+    if (!r.ok) throw Object.assign(new Error((body && body.detail) || `HTTP ${r.status}`), {status: r.status});
+    $("#pw").value = "";
+    await resume(body.token);
+  } catch (e) {
     token = "";
-    note($("#gate-msg"), e.status === 401 ? "That token was not accepted."
-       : e.status === 503 ? "The service has no AUDIT_API_TOKEN set yet." : e.message, "err");
+    note($("#gate-msg"), e.status === 503
+      ? "This service has no accounts configured yet (AUDIT_USERS)." : e.message, "err");
+  } finally {
+    $("#gate-go").disabled = false;
   }
 };
-$("#tok").addEventListener("keydown", e => { if (e.key === "Enter") $("#gate-go").click(); });
+["#email", "#pw"].forEach(s =>
+  $(s).addEventListener("keydown", e => { if (e.key === "Enter") $("#gate-go").click(); }));
 
 $("#signout").onclick = () => {
   localStorage.removeItem(KEY); token = ""; selected = null;
@@ -293,7 +311,7 @@ async function refresh() {
   }
 }
 
-if (token) { signIn(token).catch(() => { localStorage.removeItem(KEY); token = ""; showApp(false); }); }
+if (token) { resume(token).catch(() => { localStorage.removeItem(KEY); token = ""; showApp(false); }); }
 else showApp(false);
 </script>
 </body>

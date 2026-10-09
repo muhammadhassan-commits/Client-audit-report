@@ -17,10 +17,14 @@ Environment:
   AUDIT_MAX_CONCURRENT   Parallel audits. Default 1.
   PSI_API_KEY            Passed through to the PageSpeed step.
 """
+import base64
+import hashlib
+import hmac
 import json
 import os
 import re
 import secrets
+import time
 import subprocess
 import sys
 import threading
@@ -62,18 +66,89 @@ app = FastAPI(title="Wellows site audit", docs_url=None, redoc_url=None,
 
 # ---------------------------------------------------------------- auth, input
 
+SESSION_HOURS = 24 * 7
+
+
+def users():
+    """email -> password, read from AUDIT_USERS.
+
+    Format: "email:password,email2:password2". Credentials live in the
+    environment, never in this repository. A password may contain ":" but not
+    "," since that separates accounts.
+    """
+    out = {}
+    for pair in os.environ.get("AUDIT_USERS", "").split(","):
+        email, _, password = pair.strip().partition(":")
+        email, password = email.strip().lower(), password.strip()
+        if email and password:
+            out[email] = password
+    return out
+
+
+def _secret():
+    """Key that signs sessions.
+
+    Derived from the credentials, so sessions survive a restart but every
+    session dies the moment a password changes. AUDIT_SECRET_KEY overrides it.
+    """
+    explicit = os.environ.get("AUDIT_SECRET_KEY", "").strip()
+    if explicit:
+        return explicit.encode()
+    raw = os.environ.get("AUDIT_USERS", "") + "|" + os.environ.get("AUDIT_API_TOKEN", "")
+    return hashlib.sha256(("wellows-audit-v1|" + raw).encode()).digest()
+
+
+def _b64(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+
+def _unb64(text: str) -> bytes:
+    return base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
+
+
+def make_session(email: str) -> str:
+    payload = _b64(f"{email}|{int(time.time() + SESSION_HOURS * 3600)}".encode())
+    return payload + "." + _b64(hmac.new(_secret(), payload.encode(), hashlib.sha256).digest())
+
+
+def check_session(tok: str):
+    """Return the signed-in email, or None if the token is forged or expired."""
+    try:
+        payload, _, sig = tok.partition(".")
+        if not payload or not sig:
+            return None
+        want = hmac.new(_secret(), payload.encode(), hashlib.sha256).digest()
+        if not hmac.compare_digest(want, _unb64(sig)):
+            return None
+        email, _, expires = _unb64(payload).decode().rpartition("|")
+        return email if int(expires) > time.time() else None
+    except (ValueError, TypeError, UnicodeDecodeError):
+        return None
+
+
 def require_token(request: Request):
-    """Bearer auth. The service refuses to serve anything if no token is set."""
-    expected = os.environ.get("AUDIT_API_TOKEN", "")
-    if not expected:
-        raise HTTPException(503, "AUDIT_API_TOKEN is not set on this service")
+    """Accept a signed-in session, or the machine token for scripted callers.
+
+    Values are stripped: one pasted into a dashboard field or copied from a
+    terminal picks up a trailing newline often enough that an exact compare
+    turns a correct credential into a silent 401.
+    """
+    api = os.environ.get("AUDIT_API_TOKEN", "").strip()
+    if not users() and not api:
+        raise HTTPException(503, "This service has no AUDIT_USERS and no AUDIT_API_TOKEN set")
     sent = request.headers.get("authorization", "")
     if sent.lower().startswith("bearer "):
         sent = sent[7:]
     else:
         sent = request.query_params.get("token", "")
-    if not sent or not secrets.compare_digest(sent, expected):
-        raise HTTPException(401, "Bad or missing token")
+    sent = sent.strip()
+    if not sent:
+        raise HTTPException(401, "Sign in first")
+    if check_session(sent):
+        return
+    if api and secrets.compare_digest(sent, api):
+        return
+    raise HTTPException(401, "Session expired or not valid. Sign in again.")
 
 
 def allowed_domains():
@@ -199,9 +274,30 @@ class AuditRequest(BaseModel):
     skip_render: bool = False
 
 
+class Login(BaseModel):
+    email: str
+    password: str
+
+
 @app.get("/healthz", response_class=PlainTextResponse)
 def healthz():
     return "ok"
+
+
+@app.post("/login")
+def login(req: Login):
+    """Exchange an email and password for a signed session."""
+    people = users()
+    if not people:
+        raise HTTPException(503, "This service has no AUDIT_USERS set")
+    email = req.email.strip().lower()
+    # Compare against a dummy when the email is unknown, so a wrong address
+    # and a wrong password take the same work and leak nothing by timing.
+    expected = people.get(email, "\x00no-such-account")
+    if not secrets.compare_digest(req.password.strip(), expected) or email not in people:
+        raise HTTPException(401, "Wrong email or password")
+    return {"token": make_session(email), "email": email,
+            "expires_in_hours": SESSION_HOURS}
 
 
 @app.post("/audits", dependencies=[Depends(require_token)], status_code=202)

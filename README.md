@@ -76,20 +76,25 @@ GET  /audits/<id>/report          the built client report
 GET  /healthz                     unauthenticated, for the health check
 ```
 
-Every route except `/healthz` needs `Authorization: Bearer <AUDIT_API_TOKEN>`.
+People sign in at `/` with an email and password from `AUDIT_USERS`, which returns a
+session signed with HMAC-SHA256 and good for 7 days. Every route except `/healthz` and
+`/login` needs that session as `Authorization: Bearer <session>`, or the optional
+`AUDIT_API_TOKEN` for scripted callers. Changing a password invalidates every session
+signed under the old one.
 
 **Deploy.** Point Render at this repo with Blueprints > New (it reads `render.yaml`), then set:
 
 | Variable | Required | Value |
 |---|---|---|
-| `AUDIT_API_TOKEN` | Yes | 32+ random characters. The service returns 503 without it. |
+| `AUDIT_USERS` | Yes | Sign-in accounts as `email:password`, comma separated. A password may contain `:` but not `,`. The service returns 503 with no accounts and no token. |
+| `AUDIT_API_TOKEN` | No | A token for scripts and CI that cannot use the sign-in form. |
 | `AUDIT_ALLOWED_DOMAINS` | Yes | Comma-separated hosts you may audit. A host matches itself and its subdomains. The service refuses every audit without it, so it cannot be used as an open crawler. |
 | `PSI_API_KEY` | No | PageSpeed Insights key. Without it the K checks can rate-limit. |
 | `AUDIT_OUT_DIR` | Set by the blueprint | `/data/out`, on the mounted disk. |
 | `AUDIT_MAX_CONCURRENT` | No | Parallel audits, default 1. |
 
-**Two things to know before you deploy.** Reports are client data behind a shared bearer
-token, so anyone with the token reads every report on the instance. And `render.yaml` asks
+**Two things to know before you deploy.** Everyone signed in sees every report on the
+instance: there is no per-account separation. And `render.yaml` asks
 for a 1 GB disk, which needs a paid plan: on the free plan evidence and reports are lost
 whenever the instance restarts.
 
@@ -97,7 +102,7 @@ Run it locally the same way:
 
 ```
 python3 -m pip install -r requirements.txt -r requirements-web.txt
-AUDIT_API_TOKEN=dev AUDIT_ALLOWED_DOMAINS=example.com uvicorn webapp.main:app --reload
+AUDIT_USERS=you@wellows.com:devpassword AUDIT_ALLOWED_DOMAINS=example.com uvicorn webapp.main:app --reload
 ```
 
 ## Limits to know
