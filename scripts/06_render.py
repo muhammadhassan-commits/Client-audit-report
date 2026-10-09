@@ -14,7 +14,10 @@ import sys
 
 from bs4 import BeautifulSoup
 
-from common import Fetcher, load_json, log, normalize_domain, out_dir, save_json, text_of
+from urllib.parse import urlparse
+
+from common import (OUT_ROOT, Fetcher, load_json, log, normalize_domain,
+                    out_dir, save_json, text_of)
 
 
 def summarize(html):
@@ -36,6 +39,29 @@ def summarize(html):
             "tables": len(soup.find_all("table"))}
 
 
+def raw_html(f, url, domain):
+    """The server-rendered HTML for url, with one retry and a saved fallback.
+
+    A raw fetch that comes back empty, which a TLS-intercepting proxy or a
+    transient network error can cause, would otherwise be summarised as 0 words
+    and 0 links and read as a total rendering-parity failure. M1 is a Critical
+    check, so an empty fetch must never be mistaken for an empty page.
+    """
+    html = text_of(f.get(url))
+    if html.strip():
+        return html
+    html = text_of(f.get(url))                      # one retry
+    if html.strip():
+        return html
+    if urlparse(url).path in ("", "/"):             # preflight saved the homepage
+        saved = OUT_ROOT / domain / "data" / "home.html"
+        if saved.is_file():
+            log(f"raw fetch of {url} came back empty twice, using the saved home.html")
+            return saved.read_text(encoding="utf-8", errors="replace")
+    log(f"WARNING raw fetch of {url} came back empty; parity for it is not reliable")
+    return ""
+
+
 def main(domain):
     pre = load_json(domain, "preflight.json")
     if not pre:
@@ -54,7 +80,7 @@ def main(domain):
     with sync_playwright() as p:
         b = p.chromium.launch()
         for u in urls:
-            raw = summarize(text_of(f.get(u)))
+            raw = summarize(raw_html(f, u, domain))
             entry = {"raw": raw}
             for label, kw in (("desktop", {"viewport": {"width": 1366, "height": 900}}),
                               ("mobile", {"viewport": {"width": 390, "height": 844}, "is_mobile": True, "user_agent":
