@@ -17,11 +17,11 @@ specific and evidenced**. Never invent a value.
 | `framework/checks.md` | Every check the report must cover, with ID, benchmark, default severity and evidence source |
 | `framework/agents.json` | 28 AI, search and link-preview crawlers with real user agents, plus the engine-to-crawler map |
 | `framework/findings-schema.md` | The exact `findings.json` format and the rules the builder enforces |
-| `scripts/` | Evidence collectors (01 to 06), `run_all.py` and `build_report.py` |
+| `scripts/` | Evidence collectors (01 to 06), `run_all.py`, `build_report.py` and `07_build_deck.py` |
 | `templates/report.html` | Wellows-branded report: reading-progress bar, filters, light and dark mode |
 | `out/<domain>/data/` | Raw evidence (JSON, robots.txt, llms.txt, crawl.jsonl, screenshots) |
 | `out/<domain>/findings.json` | Your verdicts (you write this) |
-| `out/<domain>/report/` | The built HTML report and summary.md |
+| `out/<domain>/report/` | The built HTML report, the .pptx client deck and summary.md |
 
 ## Workflow for `/audit <domain>`
 
@@ -74,14 +74,18 @@ Do the checks the catalogue marks Manual: a schema-vs-visible-content spot check
 
 Follow `framework/findings-schema.md`. Every ID in `framework/checks.md` appears exactly once. Add extra checks you judge necessary as `X1`, `X2`, ... and say so in the method notes.
 
-### 6. Build the report
+### 6. Build the report and the client deck
 
 Run `python3 scripts/build_report.py <domain>`. Fix every ERROR, rewrite every WARN, and rebuild until the build is clean.
+
+Then run `python3 scripts/07_build_deck.py <domain>` for the PowerPoint. It reads the
+same findings.json and places the screenshots from `data/shots/`. With no screenshots,
+because Playwright never ran, the deck is built without those slides.
 
 ### 7. Reply to the user
 
 Include:
-- the report path
+- the report path and the deck path
 - the counts (Pass, Issue by severity, Needs client data, Not tested)
 - the top 5 issues, one line each
 - anything you could not test, and why

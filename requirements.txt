@@ -1,5 +1,6 @@
 requests>=2.31
 beautifulsoup4>=4.12
 lxml>=5.0
+python-pptx>=1.0
 # Optional, for rendering checks (M section):
 #   python3 -m pip install playwright && python3 -m playwright install chromium

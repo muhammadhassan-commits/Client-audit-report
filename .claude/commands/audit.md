@@ -17,12 +17,13 @@ Follow `CLAUDE.md` in this folder exactly:
    - Use web search for entity profiles if available.
    - Never exceed 2 requests per second.
 4. **Write findings:** write `out/<domain>/findings.json` covering every check ID in `framework/checks.md`, following `framework/findings-schema.md`. Every verdict is evidenced, and every passing check says "No change needed."
-5. **Build:** run `python3 scripts/build_report.py <domain>` and iterate until it builds with no errors or warnings.
-6. **Reply** with:
-   - the report path
+5. **Build the report:** run `python3 scripts/build_report.py <domain>` and iterate until it builds with no errors or warnings.
+6. **Build the deck:** run `python3 scripts/07_build_deck.py <domain>`. It reads the same findings.json and places the screenshots 06_render.py captured in `data/shots/`.
+7. **Reply** with:
+   - the report path and the deck path
    - the verdict counts
    - the top 5 issues with their fixes
    - the list of client data requests (every Needs client data item)
    - anything not tested, and why
 
-Work autonomously until the report is built. Ask only if authorization is unclear or the site is unreachable.
+Work autonomously until both the report and the deck are built. Stop only if the site is unreachable.
