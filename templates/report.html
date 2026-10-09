@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>%%TITLE%%</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Parkinsans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<!-- No external stylesheet, font or script. The report is one self-contained
+     file: it renders identically from an email attachment, a USB stick or a
+     network that blocks Google Fonts. Screenshots are inlined as data URIs. -->
 <style>
 /* Layout: fixed reading-progress bar; navy hero with verdict tiles; sticky contents rail + reading column; filterable check tables.
    Palette: Wellows product tokens (brand orange, primary blue, navy, product gray ramp). */
@@ -15,9 +15,10 @@
   --brand: #FF6F1E; --brand-ink: #C24A06; --brand-soft: #FFF5EF; --primary: #0554F2; --primary-soft: #E6EEFE; --navy: #032A79;
   --pass: #15803D; --pass-soft: #E8F2EC; --fail: #B63936; --fail-soft: #FCF0EF; --warn: #8A5A00; --warn-soft: #FEF3C7;
   --info: #4B5675; --info-soft: #EEF0F5;
-  --font-display: "Parkinsans", "Inter", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  /* System stacks only, so type renders instantly and identically offline. */
+  --font-display: "Segoe UI Semibold", "SF Pro Display", -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, Menlo, monospace;
   --bar-h: 52px; color-scheme: light;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
@@ -104,6 +105,21 @@ tr.hide { display: none; }
 code { font-family: var(--font-mono); font-size: .86em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
 a { color: var(--primary); text-underline-offset: 2px; }
 .foot { color: var(--muted); font-size: 13px; padding-top: 10px; }
+/* Evidence file references: present for the team and the developer, quiet
+   enough that a client reads the sentence and not the field name. */
+.src { display: block; margin-top: 5px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.src::before { content: "source: "; }
+/* Rendering captures */
+.shotrow { margin: 0 0 26px; }
+.shotrow h3 { font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--brand-ink);
+  background: var(--brand-soft); display: inline-block; padding: 3px 10px; border-radius: 6px; margin: 0 0 12px; }
+.shots { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+.shot { margin: 0; display: grid; gap: 7px; }
+.shot img { display: block; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.shot figcaption { font-size: 12px; color: var(--muted); text-align: center; }
+/* The appendix divider: everything below it is reference material. */
+.appendix-open { border-bottom: 0; margin-bottom: 8px; padding-bottom: 4px; }
+.appendix-open h2 { margin-bottom: 8px; }
 @media (max-width: 920px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; padding-inline: 16px; } .toc { display: none; } .hero-inner { padding-inline: 16px; } .topbar-inner { padding-inline: 16px; } }
 @media (max-width: 480px) { .mark span { display: none; } }
 </style>

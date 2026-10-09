@@ -4,8 +4,10 @@ Usage: python3 scripts/build_report.py example.com
 Writes: out/<domain>/report/<domain>-technical-audit.html and summary.md
 Exit code 1 with a list of problems if validation fails.
 """
+import base64
 import collections
 import html
+import io
 import json
 import re
 import sys
@@ -84,6 +86,86 @@ def pill(text, cls):
     return f'<span class="pill {cls}">{E(text)}</span>'
 
 
+# A trailing parenthetical naming evidence files or JSON fields, e.g.
+# "(crawl_summary.checks.images_missing_alt)". Useful to the audit team and to
+# a developer, meaningless to the client reading the sentence it sits in.
+TRAILING_PAREN = re.compile(r"\s*\(([^()]{3,160})\)\s*(\.?)\s*$")
+
+
+def split_source(text):
+    """Return (prose, source_ref). The reference is shown as a quiet citation.
+
+    Only a parenthetical made entirely of identifiers is pulled out. Every
+    token has to carry a dot or an underscore, so "(links.json internal_broken)"
+    is a citation while "(confirmed with a second client)" and "(help, docs,
+    blog)" stay in the sentence where they carry meaning.
+    """
+    if not text:
+        return "", ""
+    m = TRAILING_PAREN.search(text)
+    if not m:
+        return text, ""
+    tokens = [t for t in re.split(r"[,\s]+", m.group(1)) if t]
+    if not tokens or not all("." in t or "_" in t for t in tokens):
+        return text, ""
+    prose = text[: m.start()].rstrip()
+    if m.group(2):                      # the sentence keeps its full stop
+        prose += "."
+    return prose, m.group(1)
+
+
+def evidence_html(text):
+    prose, src = split_source(text)
+    out = E(prose)
+    if src:
+        out += f'<span class="src" title="Evidence file">{E(src)}</span>'
+    return out
+
+
+def screenshot_section(domain):
+    """Desktop and mobile captures, downscaled and inlined so the report is one file."""
+    shots = OUT_ROOT / domain / "data" / "shots"
+    if not shots.is_dir():
+        return "", 0
+    try:
+        from PIL import Image
+    except ImportError:
+        return "", 0
+    cards = []
+    for desktop in sorted(shots.glob("desktop-*.png"))[:6]:
+        mobile = shots / desktop.name.replace("desktop-", "mobile-", 1)
+        pair = []
+        for path, label, width in ((desktop, "Desktop 1366x900", 900),
+                                   (mobile, "Mobile 390x844", 300)):
+            if not path.is_file():
+                continue
+            try:
+                with Image.open(path) as im:
+                    im = im.convert("RGB")
+                    im.thumbnail((width, width * 4), Image.LANCZOS)
+                    buf = io.BytesIO()
+                    im.save(buf, "JPEG", quality=78, optimize=True)
+            except Exception:  # noqa: BLE001
+                continue
+            b64 = base64.b64encode(buf.getvalue()).decode()
+            pair.append(f'<figure class="shot"><img alt="{E(label)} capture" '
+                        f'src="data:image/jpeg;base64,{b64}"><figcaption>{E(label)}</figcaption></figure>')
+        if pair:
+            slug = desktop.stem[len("desktop-"):]
+            cards.append(f'<div class="shotrow"><h3>{E(slug_to_url(domain, slug))}</h3>'
+                         f'<div class="shots">{"".join(pair)}</div></div>')
+    return "".join(cards), len(cards)
+
+
+def slug_to_url(domain, slug):
+    """06_render.py names a capture after a slug of its URL; recover the URL."""
+    rendered = (load_json(domain, "render.json") or {}).get("pages", {})
+    for u in rendered:
+        if re.sub(r"[^a-z0-9]+", "-", u.lower())[-60:] == slug:
+            return u.replace("https://", "").replace("http://", "").rstrip("/") or domain
+    return domain
+
+
 def agent_matrix(domain):
     ca = load_json(domain, "crawler_access.json")
     if not ca:
@@ -151,14 +233,41 @@ def build(domain):
     body.append(f'<section class="sec" id="summary" data-title="Executive summary"><h2>Executive summary</h2>{paras}'
                 f'<h3>Top issues to fix first</h3><ol class="top">{top}</ol></section>')
     toc.append(('summary', '', 'Executive summary', 0))
-    meth = fd.get("method", {})
-    notes = "".join(f"<li>{E(n)}</li>" for n in meth.get("notes", []))
-    body.append(f'<section class="sec" id="method" data-title="Scope and method"><h2>Scope and method</h2>'
-                f'<p>Domain: <b>{E(fd["domain"])}</b>. Audit date: {E(fd["audit_date"])}. Pages crawled: {E(str(meth.get("pages_crawled", "")))}. '
-                f'Checks reported: {len(allc)}.</p><ul>{notes}</ul>'
-                '<p>Verdicts: <b>Pass</b> means measured and no change is needed. <b>Issue</b> carries a severity, the evidence, the impact and the exact fix. '
-                '<b>Needs client data</b> names the dashboard required. <b>Not tested</b> and <b>Not applicable</b> give the reason.</p></section>')
-    toc.append(('method', '', 'Scope and method', 0))
+
+    # Client reading order: what to do, then the evidence, then the detail.
+    # The full check tables and the method notes are reference material and sit
+    # behind the decisions they support.
+    pcls = {"P0": "p-p0", "P1": "p-p1", "P2": "p-p2"}
+    arows = "".join(f'<tr><td>{pill(a["priority"], pcls.get(a["priority"], "p-p2"))}</td><td class="ck">{E(a["action"])}</td>'
+                    f'<td class="id">{E(a.get("checks", ""))}</td><td>{E(a.get("owner", ""))}</td><td>{E(a.get("effort", ""))}</td></tr>'
+                    for a in sorted(fd["actions"], key=lambda a: a["priority"]))
+    body.append('<section class="sec" id="plan" data-title="What to do, in order"><h2>What to do, in order</h2>'
+                '<p class="intro">P0: this week. P1: within 30 days. P2: this quarter. '
+                'Every action links to the checks that produced it.</p>'
+                '<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Action</th><th>Checks</th><th>Owner</th><th>Effort</th></tr></thead>'
+                f'<tbody>{arows}</tbody></table></div></section>')
+    toc.append(("plan", "", "What to do, in order", 0))
+
+    shots_html, n_shots = screenshot_section(domain)
+    if shots_html:
+        body.append('<section class="sec" id="shots" data-title="How the pages render">'
+                    '<h2>How the pages render</h2>'
+                    '<p class="intro">Captured during the audit with a real browser engine, '
+                    'desktop beside mobile, straight from the live site.</p>'
+                    f'{shots_html}</section>')
+        toc.append(("shots", "", "How the pages render", 0))
+
+    well = "".join(f"<li>{E(w)}</li>" for w in fd.get("working_well", []))
+    body.append(f'<section class="sec" id="well" data-title="What is working well"><h2>What is already working</h2>'
+                f'<p class="intro">Measured and passing. These need no attention.</p>'
+                f'<ul class="well">{well}</ul></section>')
+    toc.append(("well", "", "What is already working", 0))
+
+    body.append('<section class="sec appendix-open" id="detail" data-title="Every check in full">'
+                '<h2>Every check in full</h2>'
+                f'<p class="intro">All {len(allc)} checks, grouped by area, each with the measured value and '
+                'the exact fix. Use the filters above to narrow this to issues only.</p></section>')
+    toc.append(("detail", "", "Every check in full", 0))
 
     for s in fd["sections"]:
         sid = "s-" + s["id"].lower()
@@ -168,7 +277,7 @@ def build(domain):
             v = VERDICTS[c["verdict"]]
             sev = (c.get("severity") or "").lower()
             vcell = pill(c["verdict"], "v-" + v) + (" " + pill(c["severity"], "s-" + sev) if c["verdict"] == "Issue" else "")
-            ev = E(c.get("evidence", ""))
+            ev = evidence_html(c.get("evidence", ""))
             if c["verdict"] == "Needs client data":
                 ev = (ev + "<br>" if ev else "") + "<b>Data needed:</b> " + E(c.get("needs", ""))
             fx = ""
@@ -187,18 +296,14 @@ def build(domain):
                     f'<tbody>{"".join(rows)}</tbody></table></div>{extra}</section>')
         toc.append((sid, s["id"], s["title"], n_issue))
 
-    well = "".join(f"<li>{E(w)}</li>" for w in fd.get("working_well", []))
-    body.append(f'<section class="sec" id="well" data-title="What is working well"><h2>What is working well</h2><ul class="well">{well}</ul></section>')
-    toc.append(("well", "", "What is working well", 0))
-    pcls = {"P0": "p-p0", "P1": "p-p1", "P2": "p-p2"}
-    arows = "".join(f'<tr><td>{pill(a["priority"], pcls.get(a["priority"], "p-p2"))}</td><td class="ck">{E(a["action"])}</td>'
-                    f'<td class="id">{E(a.get("checks", ""))}</td><td>{E(a.get("owner", ""))}</td><td>{E(a.get("effort", ""))}</td></tr>'
-                    for a in sorted(fd["actions"], key=lambda a: a["priority"]))
-    body.append('<section class="sec" id="plan" data-title="Prioritized action plan"><h2>Prioritized action plan</h2>'
-                '<p class="intro">P0: this week. P1: within 30 days. P2: this quarter.</p>'
-                '<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Action</th><th>Checks</th><th>Owner</th><th>Effort</th></tr></thead>'
-                f'<tbody>{arows}</tbody></table></div></section>')
-    toc.append(("plan", "", "Action plan", 0))
+    meth = fd.get("method", {})
+    notes = "".join(f"<li>{E(n)}</li>" for n in meth.get("notes", []))
+    body.append(f'<section class="sec" id="method" data-title="Scope and method"><h2>Scope and method</h2>'
+                f'<p>Domain: <b>{E(fd["domain"])}</b>. Audit date: {E(fd["audit_date"])}. Pages crawled: {E(str(meth.get("pages_crawled", "")))}. '
+                f'Checks reported: {len(allc)}.</p><ul>{notes}</ul>'
+                '<p>Verdicts: <b>Pass</b> means measured and no change is needed. <b>Issue</b> carries a severity, the evidence, the impact and the exact fix. '
+                '<b>Needs client data</b> names the dashboard required. <b>Not tested</b> and <b>Not applicable</b> give the reason.</p></section>')
+    toc.append(('method', '', 'Scope and method', 0))
     if fd.get("prompt_set"):
         ps = "".join(f"<li>{E(p)}</li>" for p in fd["prompt_set"])
         body.append(f'<section class="sec" id="prompts" data-title="Prompts to track"><h2>Prompts to track in Wellows</h2><ol>{ps}</ol></section>')
