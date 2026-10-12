@@ -157,8 +157,9 @@ def screenshot_section(domain):
     for desktop in sorted(shots.glob("desktop-*.png"))[:6]:
         mobile = shots / desktop.name.replace("desktop-", "mobile-", 1)
         pair = []
-        for path, label, width in ((desktop, "Desktop 1366x900", 900),
-                                   (mobile, "Mobile 390x844", 300)):
+        for path, device, dims, width in ((desktop, "Desktop", "1366 x 900", 900),
+                                          (mobile, "Mobile", "390 x 844", 300)):
+            label = f"{device} {dims}"
             if not path.is_file():
                 continue
             try:
@@ -170,8 +171,11 @@ def screenshot_section(domain):
             except Exception:  # noqa: BLE001
                 continue
             b64 = base64.b64encode(buf.getvalue()).decode()
-            pair.append(f'<figure class="shot"><img alt="{E(label)} capture" '
-                        f'src="data:image/jpeg;base64,{b64}"><figcaption>{E(label)}</figcaption></figure>')
+            pair.append(
+                f'<figure class="shot shot-{device.lower()}">'
+                f'<figcaption class="devcap"><span class="dev">{E(device)}</span>'
+                f'<span class="dim">{E(dims)}</span></figcaption>'
+                f'<img alt="{E(label)} capture" src="data:image/jpeg;base64,{b64}"></figure>')
         if pair:
             slug = desktop.stem[len("desktop-"):]
             cards.append(f'<div class="shotrow"><h3>{E(slug_to_url(domain, slug))}</h3>'
@@ -245,16 +249,36 @@ def build(domain):
     allc = [c for s in fd["sections"] for c in s["checks"]]
     vc = collections.Counter(c["verdict"] for c in allc)
     sc = collections.Counter(c.get("severity") for c in allc if c["verdict"] == "Issue")
-    tiles = [("pass", vc["Pass"], "Passing"), ("crit", sc["Critical"], "Critical issues"), ("high", sc["High"], "High issues"),
-             ("", sc["Medium"] + sc["Low"], "Medium and low issues"), ("need", vc["Needs client data"], "Need client data"),
-             ("", vc["Not tested"] + vc["Not applicable"], "Not tested or N/A")]
-    tiles_html = "".join(f'<div class="tile {c}"><b>{n}</b><span>{E(l)}</span></div>' for c, n, l in tiles)
+    # One stacked bar of the whole audit, with a legend under it. Reads at a
+    # glance in a way six separate number tiles did not.
+    bands = [("pass", vc["Pass"], "Pass"), ("crit", sc["Critical"], "Critical"),
+             ("high", sc["High"], "High"), ("med", sc["Medium"], "Medium"),
+             ("low", sc["Low"], "Low"), ("need", vc["Needs client data"], "Needs data"),
+             ("nt", vc["Not tested"] + vc["Not applicable"], "Not tested")]
+    bands = [b for b in bands if b[1]]
+    total = sum(n for _, n, _ in bands) or 1
+    segs = "".join(f'<span class="seg b-{c}" style="width:{n / total * 100:.4f}%" '
+                   f'title="{E(l)}: {n}"></span>' for c, n, l in bands)
+    keys = "".join(f'<span class="key"><i class="b-{c}"></i>{E(l)} <b>{n}</b></span>'
+                   for c, n, l in bands)
+    tiles_html = f'<div class="bar" role="img" aria-label="{E(", ".join(f"{l} {n}" for _, n, l in bands))}">{segs}</div><div class="keys">{keys}</div>'
 
     es = fd["executive_summary"]
     body, toc = [], []
-    # The headline of each top issue links to the check it came from.
-    top = "".join(f'<li><a class="jump" href="#c-{E(t["id"])}"><b>{E(t["id"])}: {E(t["title"])}</b></a>'
-                  f"<span>{E(t['fix'])}</span></li>" for t in es.get("top_issues", []))
+    # Each top issue carries its severity and a link straight to the check,
+    # so the reader can judge and jump without scrolling the appendix.
+    by_id = {c["id"]: c for c in allc}
+    tops = []
+    for t in es.get("top_issues", []):
+        src = by_id.get(t["id"], {})
+        sev = src.get("severity", "")
+        badge = pill(f"{sev} issue", "s-" + sev.lower()) if sev else ""
+        tops.append(
+            f'<li><div class="tophead"><b>{E(t["title"])}</b>{badge}'
+            f'<a class="jump chk" href="#c-{E(t["id"])}">Check {E(t["id"])}</a></div>'
+            f'<span>{E(src.get("evidence", ""))}</span>'
+            f'<span class="fixline"><b>Fix:</b> {E(t["fix"])}</span></li>')
+    top = "".join(tops)
     paras = "".join(f"<p>{E(p)}</p>" for p in es.get("paragraphs", []))
     body.append(f'<section class="sec" id="summary" data-title="Executive summary"><h2>Executive summary</h2>{paras}'
                 f'<h3>Top issues to fix first</h3><ol class="top">{top}</ol></section>')

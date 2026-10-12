@@ -1,128 +1,770 @@
 {
-  "_note": "Authoritative reference per check, shown in the client report under each finding. 'sources' is the library; 'checks' maps a check ID in checks.md to the source keys that support it. Every URL is verified by scripts/verify_references.py. Never add an internal document here: this is client-facing.",
-
+  "_note": "Authoritative reference per check, shown in the client report under each finding. 'sources' is the library; 'checks' maps a check ID in checks.md to the source keys that support it. An empty list is deliberate: it means the benchmark is Wellows practice and no published document sets it, so the report shows no reference rather than one that does not say what the check claims. Every URL is verified by scripts/verify_references.py. Never add an internal document here: this is client-facing.",
   "sources": {
-    "G1":   {"publisher": "Google Search Central", "title": "How Google interprets the robots.txt specification", "url": "https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt"},
-    "G1b":  {"publisher": "Google Search Central", "title": "Introduction to robots.txt", "url": "https://developers.google.com/search/docs/crawling-indexing/robots/intro"},
-    "G2":   {"publisher": "Google Search Central", "title": "How HTTP status codes affect Google Search", "url": "https://developers.google.com/search/docs/crawling-indexing/http-network-errors"},
-    "G4":   {"publisher": "Google Search Central", "title": "Google's common crawlers", "url": "https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers"},
-    "G5":   {"publisher": "Google Search Central", "title": "Build and submit a sitemap", "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap"},
-    "G6":   {"publisher": "sitemaps.org", "title": "Sitemap protocol 0.9", "url": "https://www.sitemaps.org/protocol.html"},
-    "G7":   {"publisher": "Google Search Central", "title": "How to specify a canonical URL", "url": "https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls"},
-    "G8":   {"publisher": "Google Search Central", "title": "Robots meta tag, data-nosnippet and X-Robots-Tag", "url": "https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag"},
-    "G9":   {"publisher": "Google Search Central", "title": "Understand JavaScript SEO basics", "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics"},
-    "G10":  {"publisher": "Google Search Central", "title": "Localized versions of your pages", "url": "https://developers.google.com/search/docs/specialty/international/localized-versions"},
-    "G11":  {"publisher": "Google Search Central", "title": "Structured data general guidelines", "url": "https://developers.google.com/search/docs/appearance/structured-data/sd-policies"},
-    "G12":  {"publisher": "Google Search Central", "title": "Organization structured data", "url": "https://developers.google.com/search/docs/appearance/structured-data/organization"},
-    "G13":  {"publisher": "Google Search Central", "title": "Product snippet structured data", "url": "https://developers.google.com/search/docs/appearance/structured-data/product"},
-    "G14":  {"publisher": "Google Search Central", "title": "Article structured data", "url": "https://developers.google.com/search/docs/appearance/structured-data/article"},
-    "G14b": {"publisher": "Google Search Central", "title": "Breadcrumb structured data", "url": "https://developers.google.com/search/docs/appearance/structured-data/breadcrumb"},
-    "G14c": {"publisher": "Google Search Central", "title": "FAQ structured data", "url": "https://developers.google.com/search/docs/appearance/structured-data/faqpage"},
-    "G14d": {"publisher": "Google Search Central", "title": "Video SEO best practices", "url": "https://developers.google.com/search/docs/appearance/video"},
-    "G15":  {"publisher": "Google Search Central", "title": "Influencing your title links in search results", "url": "https://developers.google.com/search/docs/appearance/title-link"},
-    "G15b": {"publisher": "Google Search Central", "title": "Control your snippets in search results", "url": "https://developers.google.com/search/docs/appearance/snippet"},
-    "G16":  {"publisher": "Google Search Central", "title": "Top ways to ensure your content performs well in AI experiences", "url": "https://developers.google.com/search/docs/appearance/ai-features"},
-    "G17":  {"publisher": "Google Search Central", "title": "Creating helpful, reliable, people-first content", "url": "https://developers.google.com/search/docs/fundamentals/creating-helpful-content"},
-    "G18":  {"publisher": "Google Search Central", "title": "Google Search technical requirements", "url": "https://developers.google.com/search/docs/essentials/technical"},
-    "G20":  {"publisher": "Google Search Central", "title": "Mobile-first indexing best practices", "url": "https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing"},
-    "G21":  {"publisher": "Google Search Central", "title": "Understanding page experience in Google Search", "url": "https://developers.google.com/search/docs/appearance/page-experience"},
-    "G22":  {"publisher": "Google Search Central", "title": "Google Images SEO best practices", "url": "https://developers.google.com/search/docs/appearance/google-images"},
-    "GSC":  {"publisher": "Google", "title": "Search Console", "url": "https://search.google.com/search-console/about"},
-    "GBP":  {"publisher": "Google", "title": "Google Business Profile Help", "url": "https://support.google.com/business/answer/3038177"},
-    "GA4":  {"publisher": "Google", "title": "Set up Analytics for a website", "url": "https://support.google.com/analytics/answer/9304153"},
-    "GSB":  {"publisher": "Google", "title": "Safe Browsing site status", "url": "https://transparencyreport.google.com/safe-browsing/search"},
-    "BWT":  {"publisher": "Microsoft", "title": "Bing Webmaster Tools", "url": "https://www.bing.com/webmasters/about"},
-    "IDX":  {"publisher": "IndexNow", "title": "IndexNow protocol", "url": "https://www.indexnow.org/"},
-    "W1":   {"publisher": "web.dev (Google)", "title": "Web Vitals", "url": "https://web.dev/articles/vitals"},
-    "W1c":  {"publisher": "web.dev (Google)", "title": "Largest Contentful Paint (LCP)", "url": "https://web.dev/articles/lcp"},
-    "W3":   {"publisher": "Google", "title": "PageSpeed Insights API", "url": "https://developers.google.com/speed/docs/insights/v5/get-started"},
-    "S1":   {"publisher": "schema.org", "title": "Schema.org vocabulary", "url": "https://schema.org/"},
-    "R1":   {"publisher": "IETF", "title": "RFC 9309: Robots Exclusion Protocol", "url": "https://www.rfc-editor.org/rfc/rfc9309.html"},
-    "R2":   {"publisher": "IETF", "title": "RFC 3986: Uniform Resource Identifier", "url": "https://www.rfc-editor.org/rfc/rfc3986"},
-    "R3":   {"publisher": "IETF", "title": "RFC 9110: HTTP Semantics", "url": "https://www.rfc-editor.org/rfc/rfc9110.html"},
-    "R4":   {"publisher": "IETF", "title": "RFC 6797: HTTP Strict Transport Security", "url": "https://www.rfc-editor.org/rfc/rfc6797"},
-    "L1":   {"publisher": "llmstxt.org", "title": "The /llms.txt file", "url": "https://llmstxt.org/"},
-    "V1":   {"publisher": "OpenAI", "title": "OpenAI crawlers: GPTBot, OAI-SearchBot, ChatGPT-User", "url": "https://platform.openai.com/docs/bots"},
-    "V2":   {"publisher": "Anthropic", "title": "Anthropic crawlers and how to control them", "url": "https://support.claude.com/en/articles/8896518"},
-    "V3":   {"publisher": "Perplexity", "title": "PerplexityBot and Perplexity-User", "url": "https://docs.perplexity.ai/guides/bots"},
-    "V4":   {"publisher": "Apple", "title": "About Applebot", "url": "https://support.apple.com/en-us/119829"},
-    "C1":   {"publisher": "Common Crawl", "title": "CCBot", "url": "https://commoncrawl.org/ccbot"},
-    "CF1":  {"publisher": "Cloudflare", "title": "What is a bot? Bot categories", "url": "https://developers.cloudflare.com/bots/concepts/bot/"},
-    "CF2":  {"publisher": "Cloudflare", "title": "Verified bots", "url": "https://developers.cloudflare.com/bots/concepts/bot/verified-bots/"},
-    "OG":   {"publisher": "Open Graph protocol", "title": "The Open Graph protocol", "url": "https://ogp.me/"},
-    "MDN1": {"publisher": "MDN", "title": "The main element", "url": "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/main"},
-    "MDN2": {"publisher": "MDN", "title": "Mixed content", "url": "https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content"},
-    "MDN3": {"publisher": "MDN", "title": "Obsolete and deprecated HTML elements", "url": "https://developer.mozilla.org/en-US/docs/Web/HTML/Element#obsolete_and_deprecated_elements"},
-    "MOZ":  {"publisher": "Mozilla", "title": "SSL configuration generator", "url": "https://ssl-config.mozilla.org/"},
-    "OWASP":{"publisher": "OWASP", "title": "Secure headers project", "url": "https://owasp.org/www-project-secure-headers/"},
-    "W3C1": {"publisher": "W3C WAI", "title": "Images tutorial: alt text", "url": "https://www.w3.org/WAI/tutorials/images/"},
-    "W3C2": {"publisher": "W3C WAI", "title": "Headings", "url": "https://www.w3.org/WAI/tutorials/page-structure/headings/"},
-    "W3C3": {"publisher": "W3C WAI", "title": "Tables tutorial", "url": "https://www.w3.org/WAI/tutorials/tables/"},
-    "W3C4": {"publisher": "W3C WAI", "title": "Page regions and landmarks", "url": "https://www.w3.org/WAI/tutorials/page-structure/regions/"},
-    "A1":   {"publisher": "Ahrefs", "title": "Title tags study of 953,276 pages", "url": "https://ahrefs.com/blog/title-tags-study/"},
-    "A2":   {"publisher": "Ahrefs", "title": "How often does Google rewrite meta descriptions?", "url": "https://ahrefs.com/blog/meta-description-study/"},
-    "A3":   {"publisher": "Ahrefs", "title": "Internal links for SEO", "url": "https://ahrefs.com/blog/internal-links-for-seo/"},
-    "A5":   {"publisher": "Ahrefs", "title": "What is anchor text?", "url": "https://ahrefs.com/blog/anchor-text/"},
-    "M3":   {"publisher": "Moz", "title": "Internal links", "url": "https://moz.com/learn/seo/internal-link"}
+    "G1": {
+      "publisher": "Google Search Central",
+      "title": "How Google interprets the robots.txt specification",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt"
+    },
+    "G1b": {
+      "publisher": "Google Search Central",
+      "title": "Introduction to robots.txt",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/robots/intro"
+    },
+    "G2": {
+      "publisher": "Google Search Central",
+      "title": "How HTTP status codes affect Google Search",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/http-network-errors"
+    },
+    "G4": {
+      "publisher": "Google Search Central",
+      "title": "Google's common crawlers",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers"
+    },
+    "G5": {
+      "publisher": "Google Search Central",
+      "title": "Build and submit a sitemap",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap"
+    },
+    "G6": {
+      "publisher": "sitemaps.org",
+      "title": "Sitemap protocol 0.9",
+      "url": "https://www.sitemaps.org/protocol.html"
+    },
+    "G7": {
+      "publisher": "Google Search Central",
+      "title": "How to specify a canonical URL",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls"
+    },
+    "G8": {
+      "publisher": "Google Search Central",
+      "title": "Robots meta tag, data-nosnippet and X-Robots-Tag",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag"
+    },
+    "G9": {
+      "publisher": "Google Search Central",
+      "title": "Understand JavaScript SEO basics",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics"
+    },
+    "G10": {
+      "publisher": "Google Search Central",
+      "title": "Localized versions of your pages",
+      "url": "https://developers.google.com/search/docs/specialty/international/localized-versions"
+    },
+    "G11": {
+      "publisher": "Google Search Central",
+      "title": "Structured data general guidelines",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/sd-policies"
+    },
+    "G12": {
+      "publisher": "Google Search Central",
+      "title": "Organization structured data",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/organization"
+    },
+    "G13": {
+      "publisher": "Google Search Central",
+      "title": "Product snippet structured data",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/product"
+    },
+    "G14": {
+      "publisher": "Google Search Central",
+      "title": "Article structured data",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/article"
+    },
+    "G14b": {
+      "publisher": "Google Search Central",
+      "title": "Breadcrumb structured data",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/breadcrumb"
+    },
+    "G14c": {
+      "publisher": "Google Search Central",
+      "title": "FAQ structured data",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/faqpage"
+    },
+    "G14d": {
+      "publisher": "Google Search Central",
+      "title": "Video SEO best practices",
+      "url": "https://developers.google.com/search/docs/appearance/video"
+    },
+    "G15": {
+      "publisher": "Google Search Central",
+      "title": "Influencing your title links in search results",
+      "url": "https://developers.google.com/search/docs/appearance/title-link"
+    },
+    "G15b": {
+      "publisher": "Google Search Central",
+      "title": "Control your snippets in search results",
+      "url": "https://developers.google.com/search/docs/appearance/snippet"
+    },
+    "G16": {
+      "publisher": "Google Search Central",
+      "title": "Top ways to ensure your content performs well in AI experiences",
+      "url": "https://developers.google.com/search/docs/appearance/ai-features"
+    },
+    "G17": {
+      "publisher": "Google Search Central",
+      "title": "Creating helpful, reliable, people-first content",
+      "url": "https://developers.google.com/search/docs/fundamentals/creating-helpful-content"
+    },
+    "G18": {
+      "publisher": "Google Search Central",
+      "title": "Google Search technical requirements",
+      "url": "https://developers.google.com/search/docs/essentials/technical"
+    },
+    "G20": {
+      "publisher": "Google Search Central",
+      "title": "Mobile-first indexing best practices",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing"
+    },
+    "G21": {
+      "publisher": "Google Search Central",
+      "title": "Understanding page experience in Google Search",
+      "url": "https://developers.google.com/search/docs/appearance/page-experience"
+    },
+    "G22": {
+      "publisher": "Google Search Central",
+      "title": "Google Images SEO best practices",
+      "url": "https://developers.google.com/search/docs/appearance/google-images"
+    },
+    "GSC": {
+      "publisher": "Google",
+      "title": "Search Console",
+      "url": "https://search.google.com/search-console/about"
+    },
+    "GBP": {
+      "publisher": "Google",
+      "title": "Google Business Profile Help",
+      "url": "https://support.google.com/business/answer/3038177"
+    },
+    "GA4": {
+      "publisher": "Google",
+      "title": "Set up Analytics for a website",
+      "url": "https://support.google.com/analytics/answer/9304153"
+    },
+    "GSB": {
+      "publisher": "Google",
+      "title": "Safe Browsing site status",
+      "url": "https://transparencyreport.google.com/safe-browsing/search"
+    },
+    "BWT": {
+      "publisher": "Microsoft",
+      "title": "Bing Webmaster Tools",
+      "url": "https://www.bing.com/webmasters/about"
+    },
+    "IDX": {
+      "publisher": "IndexNow",
+      "title": "IndexNow protocol",
+      "url": "https://www.indexnow.org/"
+    },
+    "W1": {
+      "publisher": "web.dev (Google)",
+      "title": "Web Vitals",
+      "url": "https://web.dev/articles/vitals"
+    },
+    "W1c": {
+      "publisher": "web.dev (Google)",
+      "title": "Largest Contentful Paint (LCP)",
+      "url": "https://web.dev/articles/lcp"
+    },
+    "W3": {
+      "publisher": "Google",
+      "title": "PageSpeed Insights API",
+      "url": "https://developers.google.com/speed/docs/insights/v5/get-started"
+    },
+    "S1": {
+      "publisher": "schema.org",
+      "title": "Schema.org vocabulary",
+      "url": "https://schema.org/"
+    },
+    "R1": {
+      "publisher": "IETF",
+      "title": "RFC 9309: Robots Exclusion Protocol",
+      "url": "https://www.rfc-editor.org/rfc/rfc9309.html"
+    },
+    "R2": {
+      "publisher": "IETF",
+      "title": "RFC 3986: Uniform Resource Identifier",
+      "url": "https://www.rfc-editor.org/rfc/rfc3986"
+    },
+    "R3": {
+      "publisher": "IETF",
+      "title": "RFC 9110: HTTP Semantics",
+      "url": "https://www.rfc-editor.org/rfc/rfc9110.html"
+    },
+    "R4": {
+      "publisher": "IETF",
+      "title": "RFC 6797: HTTP Strict Transport Security",
+      "url": "https://www.rfc-editor.org/rfc/rfc6797"
+    },
+    "L1": {
+      "publisher": "llmstxt.org",
+      "title": "The /llms.txt file",
+      "url": "https://llmstxt.org/"
+    },
+    "V1": {
+      "publisher": "OpenAI",
+      "title": "OpenAI crawlers: GPTBot, OAI-SearchBot, ChatGPT-User",
+      "url": "https://platform.openai.com/docs/bots"
+    },
+    "V2": {
+      "publisher": "Anthropic",
+      "title": "Anthropic crawlers and how to control them",
+      "url": "https://support.claude.com/en/articles/8896518"
+    },
+    "V3": {
+      "publisher": "Perplexity",
+      "title": "PerplexityBot and Perplexity-User",
+      "url": "https://docs.perplexity.ai/guides/bots"
+    },
+    "V4": {
+      "publisher": "Apple",
+      "title": "About Applebot",
+      "url": "https://support.apple.com/en-us/119829"
+    },
+    "C1": {
+      "publisher": "Common Crawl",
+      "title": "CCBot",
+      "url": "https://commoncrawl.org/ccbot"
+    },
+    "CF1": {
+      "publisher": "Cloudflare",
+      "title": "What is a bot? Bot categories",
+      "url": "https://developers.cloudflare.com/bots/concepts/bot/"
+    },
+    "CF2": {
+      "publisher": "Cloudflare",
+      "title": "Verified bots",
+      "url": "https://developers.cloudflare.com/bots/concepts/bot/verified-bots/"
+    },
+    "OG": {
+      "publisher": "Open Graph protocol",
+      "title": "The Open Graph protocol",
+      "url": "https://ogp.me/"
+    },
+    "MDN1": {
+      "publisher": "MDN",
+      "title": "The main element",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/main"
+    },
+    "MDN2": {
+      "publisher": "MDN",
+      "title": "Mixed content",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content"
+    },
+    "MDN3": {
+      "publisher": "MDN",
+      "title": "Obsolete and deprecated HTML elements",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTML/Element#obsolete_and_deprecated_elements"
+    },
+    "MOZ": {
+      "publisher": "Mozilla",
+      "title": "SSL configuration generator",
+      "url": "https://ssl-config.mozilla.org/"
+    },
+    "OWASP": {
+      "publisher": "OWASP",
+      "title": "Secure headers project",
+      "url": "https://owasp.org/www-project-secure-headers/"
+    },
+    "W3C1": {
+      "publisher": "W3C WAI",
+      "title": "Images tutorial: alt text",
+      "url": "https://www.w3.org/WAI/tutorials/images/"
+    },
+    "W3C2": {
+      "publisher": "W3C WAI",
+      "title": "Headings",
+      "url": "https://www.w3.org/WAI/tutorials/page-structure/headings/"
+    },
+    "W3C3": {
+      "publisher": "W3C WAI",
+      "title": "Tables tutorial",
+      "url": "https://www.w3.org/WAI/tutorials/tables/"
+    },
+    "W3C4": {
+      "publisher": "W3C WAI",
+      "title": "Page regions and landmarks",
+      "url": "https://www.w3.org/WAI/tutorials/page-structure/regions/"
+    },
+    "A1": {
+      "publisher": "Ahrefs",
+      "title": "Title tags study of 953,276 pages",
+      "url": "https://ahrefs.com/blog/title-tags-study/"
+    },
+    "A2": {
+      "publisher": "Ahrefs",
+      "title": "How often does Google rewrite meta descriptions?",
+      "url": "https://ahrefs.com/blog/meta-description-study/"
+    },
+    "A3": {
+      "publisher": "Ahrefs",
+      "title": "Internal links for SEO",
+      "url": "https://ahrefs.com/blog/internal-links-for-seo/"
+    },
+    "A5": {
+      "publisher": "Ahrefs",
+      "title": "What is anchor text?",
+      "url": "https://ahrefs.com/blog/anchor-text/"
+    },
+    "M3": {
+      "publisher": "Moz",
+      "title": "Internal links",
+      "url": "https://moz.com/learn/seo/internal-link"
+    }
   },
-
   "checks": {
-    "AI1": ["G1", "R1"], "AI2": ["G1", "G4", "R1"], "AI3": ["V1", "V2", "V3"],
-    "AI4": ["V1", "V2", "C1"], "AI5": ["R3", "CF1", "V1"], "AI6": ["OG"],
-    "AI7": ["G8", "G15b"], "AI8": ["CF1", "G1"], "AI9": ["L1"], "AI10": ["L1"],
-    "AI11": ["CF2"], "AI12": ["CF2"], "AI13": ["CF1", "G4"], "AI14": ["G16"],
-    "AI15": ["G8", "G18"], "AI16": ["V1", "V2", "V3", "V4"],
-
-    "A1": ["G7", "R3"], "A2": ["G1b", "R3"], "A3": ["G5", "G6"], "A4": ["G5", "G2"],
-    "A5": ["G6"], "A6": ["G8"], "A7": ["G2"], "A8": ["G2", "R3"], "A9": ["G7", "R2"],
-    "A10": ["G7", "G5"], "A11": ["G10"], "A12": ["GSC"], "A13": ["BWT"],
-    "A14": ["IDX"], "A15": ["GSC", "G2"],
-
-    "B1": ["R2", "G18"], "B2": ["R2", "G18"], "B3": ["G7"],
-
-    "C1": ["G7"], "C2": ["G7"], "C3": ["G7"], "C4": ["G7"],
-
-    "D1": ["G15", "A1"], "D2": ["G15", "A1"], "D3": ["G15b", "A2"], "D4": ["G15b", "A2"],
-    "D5": ["G18", "G20"], "D6": ["G18"],
-
-    "E1": ["W3C2", "G18"], "E2": ["W3C2"], "E3": ["W3C2"],
-
-    "F1": ["G17", "G16"], "F2": ["G18", "G17"], "F3": ["G7", "G17"], "F4": ["G17"],
-    "F5": ["G17", "G16"],
-
-    "G1": ["W3C1", "G22"], "G2": ["G22", "W1c"], "G3": ["W1", "G22"], "G4": ["W1c"],
-    "G5": ["G14d"],
-
-    "H1": ["G2", "A3"], "H2": ["G2"], "H3": ["G2", "A3"], "H4": ["G18", "MDN2"],
-    "H5": ["A5", "M3"], "H6": ["G8", "A3"], "H7": ["A3", "M3"], "H8": ["A3", "M3"],
-
-    "I1": ["G11", "S1"], "I2": ["G11"], "I3": ["G12"], "I4": ["G13", "G11"],
-    "I5": ["G14"], "I6": ["G14b"], "I7": ["S1", "G12"], "I8": ["G12", "S1"],
-    "I9": ["G11"], "I10": ["G9", "G11"],
-
-    "J1": ["OG"], "J2": ["OG"], "J3": ["OG"],
-
-    "K1": ["W1", "W1c"], "K2": ["W1"], "K3": ["W1"], "K4": ["W1", "W3"],
-    "K5": ["W3"], "K6": ["W3", "W1"], "K7": ["W3"], "K8": ["W3", "G18"],
-    "K9": ["R3", "W3"], "K10": ["G2", "G18"], "K11": ["R3", "W3"], "K12": ["W3", "W1"],
-
-    "L1": ["G18", "MOZ"], "L2": ["MOZ"], "L3": ["R4", "OWASP"], "L4": ["OWASP"],
-    "L5": ["MDN2"], "L6": ["OWASP"], "L7": ["GSB"], "L8": ["R3"],
-
-    "M1": ["G9"], "M2": ["G20"], "M3": ["G9"], "M4": ["G21"], "M5": ["G18"],
-    "M6": ["MDN3"], "M7": ["W3"],
-
-    "P1": ["W3C4", "MDN1"], "P2": ["G16", "G17"], "P3": ["W3C2"], "P4": ["W3C3"],
-    "P5": ["G17"], "P6": ["W3C1"],
-
-    "Q1": ["G16", "G15b"], "Q2": ["G16"], "Q3": ["G14c"], "Q4": ["G16", "G17"],
-    "Q5": ["G8", "G15b"], "Q6": ["GBP"],
-
-    "R1": ["G16"], "R2": ["G17", "G16"], "R3": ["G14", "G16"], "R4": ["G17", "G14"],
-    "R5": ["G17"], "R6": ["G16", "G17"], "R7": ["G12", "S1"], "R8": ["G16"],
-    "R9": ["G16"],
-
-    "N1": ["GA4"], "N2": ["GSC", "BWT"], "N3": ["CF1"], "N4": ["CF1"],
-    "N5": ["G2", "R3"], "N6": ["G8"], "N7": ["G18"]
+    "AI1": [
+      "G1",
+      "R1"
+    ],
+    "AI2": [
+      "G1",
+      "G4",
+      "R1"
+    ],
+    "AI3": [
+      "V1",
+      "V2",
+      "V3"
+    ],
+    "AI4": [
+      "V1",
+      "V2",
+      "C1"
+    ],
+    "AI5": [
+      "R3",
+      "CF1",
+      "V1"
+    ],
+    "AI6": [
+      "OG"
+    ],
+    "AI7": [
+      "G8",
+      "G15b"
+    ],
+    "AI8": [
+      "CF1",
+      "G1"
+    ],
+    "AI9": [
+      "L1"
+    ],
+    "AI10": [
+      "L1"
+    ],
+    "AI11": [
+      "CF2"
+    ],
+    "AI12": [
+      "CF2"
+    ],
+    "AI13": [],
+    "AI14": [],
+    "AI15": [
+      "G8",
+      "G18"
+    ],
+    "AI16": [
+      "V1",
+      "V2",
+      "V3",
+      "V4"
+    ],
+    "A1": [
+      "G7",
+      "R3"
+    ],
+    "A2": [
+      "G1b",
+      "R3"
+    ],
+    "A3": [
+      "G5",
+      "G6"
+    ],
+    "A4": [
+      "G5",
+      "G2"
+    ],
+    "A5": [
+      "G6"
+    ],
+    "A6": [
+      "G8"
+    ],
+    "A7": [
+      "G2"
+    ],
+    "A8": [
+      "G2",
+      "R3"
+    ],
+    "A9": [
+      "G7",
+      "R2"
+    ],
+    "A10": [
+      "G7",
+      "G5"
+    ],
+    "A11": [
+      "G10"
+    ],
+    "A12": [
+      "GSC"
+    ],
+    "A13": [
+      "BWT"
+    ],
+    "A14": [
+      "IDX"
+    ],
+    "A15": [
+      "GSC",
+      "G2"
+    ],
+    "B1": [],
+    "B2": [
+      "R2",
+      "G18"
+    ],
+    "B3": [
+      "G7"
+    ],
+    "C1": [
+      "G7"
+    ],
+    "C2": [
+      "G7"
+    ],
+    "C3": [
+      "G7"
+    ],
+    "C4": [
+      "G7"
+    ],
+    "D1": [
+      "G15",
+      "A1"
+    ],
+    "D2": [
+      "G15",
+      "A1"
+    ],
+    "D3": [
+      "G15b",
+      "A2"
+    ],
+    "D4": [
+      "G15b",
+      "A2"
+    ],
+    "D5": [
+      "G18",
+      "G20"
+    ],
+    "D6": [
+      "G18"
+    ],
+    "E1": [
+      "W3C2",
+      "G18"
+    ],
+    "E2": [
+      "W3C2"
+    ],
+    "E3": [
+      "W3C2"
+    ],
+    "F1": [
+      "G17",
+      "G16"
+    ],
+    "F2": [
+      "G18",
+      "G17"
+    ],
+    "F3": [
+      "G7",
+      "G17"
+    ],
+    "F4": [],
+    "F5": [
+      "G17",
+      "G16"
+    ],
+    "G1": [
+      "W3C1",
+      "G22"
+    ],
+    "G2": [
+      "G22",
+      "W1c"
+    ],
+    "G3": [
+      "W1",
+      "G22"
+    ],
+    "G4": [
+      "W1c"
+    ],
+    "G5": [
+      "G14d"
+    ],
+    "H1": [
+      "G2",
+      "A3"
+    ],
+    "H2": [
+      "G2"
+    ],
+    "H3": [
+      "G2",
+      "A3"
+    ],
+    "H4": [
+      "G18",
+      "MDN2"
+    ],
+    "H5": [
+      "A5",
+      "M3"
+    ],
+    "H6": [
+      "G8",
+      "A3"
+    ],
+    "H7": [
+      "A3",
+      "M3"
+    ],
+    "H8": [
+      "A3",
+      "M3"
+    ],
+    "I1": [
+      "G11",
+      "S1"
+    ],
+    "I2": [
+      "G11"
+    ],
+    "I3": [
+      "G12"
+    ],
+    "I4": [
+      "G13",
+      "G11"
+    ],
+    "I5": [
+      "G14"
+    ],
+    "I6": [
+      "G14b"
+    ],
+    "I7": [
+      "S1",
+      "G12"
+    ],
+    "I8": [
+      "G12",
+      "S1"
+    ],
+    "I9": [
+      "G11"
+    ],
+    "I10": [
+      "G9",
+      "G11"
+    ],
+    "J1": [
+      "OG"
+    ],
+    "J2": [
+      "OG"
+    ],
+    "J3": [
+      "OG"
+    ],
+    "K1": [
+      "W1",
+      "W1c"
+    ],
+    "K2": [
+      "W1"
+    ],
+    "K3": [
+      "W1"
+    ],
+    "K4": [
+      "W1",
+      "W3"
+    ],
+    "K5": [
+      "W3"
+    ],
+    "K6": [
+      "W3",
+      "W1"
+    ],
+    "K7": [
+      "W3"
+    ],
+    "K8": [
+      "W3",
+      "G18"
+    ],
+    "K9": [
+      "R3",
+      "W3"
+    ],
+    "K10": [],
+    "K11": [
+      "R3",
+      "W3"
+    ],
+    "K12": [
+      "W3",
+      "W1"
+    ],
+    "L1": [
+      "G18",
+      "MOZ"
+    ],
+    "L2": [
+      "MOZ"
+    ],
+    "L3": [
+      "R4",
+      "OWASP"
+    ],
+    "L4": [
+      "OWASP"
+    ],
+    "L5": [
+      "MDN2"
+    ],
+    "L6": [
+      "OWASP"
+    ],
+    "L7": [
+      "GSB"
+    ],
+    "L8": [
+      "R3"
+    ],
+    "M1": [
+      "G9"
+    ],
+    "M2": [
+      "G20"
+    ],
+    "M3": [
+      "G9"
+    ],
+    "M4": [
+      "G21"
+    ],
+    "M5": [
+      "G18"
+    ],
+    "M6": [
+      "MDN3"
+    ],
+    "M7": [
+      "W3"
+    ],
+    "P1": [
+      "W3C4",
+      "MDN1"
+    ],
+    "P2": [],
+    "P3": [],
+    "P4": [
+      "W3C3"
+    ],
+    "P5": [],
+    "P6": [
+      "W3C1"
+    ],
+    "Q1": [
+      "G16",
+      "G15b"
+    ],
+    "Q2": [],
+    "Q3": [
+      "G14c"
+    ],
+    "Q4": [],
+    "Q5": [
+      "G8",
+      "G15b"
+    ],
+    "Q6": [
+      "GBP"
+    ],
+    "R1": [],
+    "R2": [
+      "G17",
+      "G16"
+    ],
+    "R3": [
+      "G14",
+      "G16"
+    ],
+    "R4": [
+      "G17",
+      "G14"
+    ],
+    "R5": [
+      "G17"
+    ],
+    "R6": [
+      "G16",
+      "G17"
+    ],
+    "R7": [
+      "G12",
+      "S1"
+    ],
+    "R8": [],
+    "R9": [],
+    "N1": [
+      "GA4"
+    ],
+    "N2": [
+      "GSC",
+      "BWT"
+    ],
+    "N3": [],
+    "N4": [],
+    "N5": [
+      "G2",
+      "R3"
+    ],
+    "N6": [
+      "G8"
+    ],
+    "N7": []
+  },
+  "_own_practice": {
+    "AI13": "Seen within 7 days is our freshness bar, not a documented one.",
+    "AI14": "The fixed prompt set across engines is our method.",
+    "B1": "75 characters is our tidiness bar. No specification sets a URL length.",
+    "F4": "Flesch Reading Ease 50 to 70 is our bar, and it is not calibrated for Turkish.",
+    "K10": "Under 100 KB of HTML is our bar. Google documents a 15 MB fetch limit, not this.",
+    "P2": "60 percent of words inside main is our bar.",
+    "P3": "Anchor ids on half of headings is our bar.",
+    "P5": "A 10 percent text-to-HTML ratio is our bar.",
+    "Q2": "A 40 to 60 word answer-first paragraph is our bar.",
+    "Q4": "Defining terms near the top of a pillar page is our guidance.",
+    "R1": "Self-contained passages is our guidance.",
+    "R8": "Brand mention footprint is measured in Wellows, not against a public standard.",
+    "R9": "The 15 prompt set is a Wellows deliverable.",
+    "N3": "Per-bot alerting is our operational guidance.",
+    "N4": "90 days of log retention is our bar.",
+    "N7": "The release checklist is our operational guidance."
   }
 }
