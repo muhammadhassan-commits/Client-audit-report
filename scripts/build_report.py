@@ -18,6 +18,7 @@ VERDICTS = {"Pass": "pass", "Issue": "issue", "Needs client data": "need", "Not 
 SEVERITIES = ["Critical", "High", "Medium", "Low"]
 HEDGES = re.compile(r"\b(may|might|possibly|could potentially|consider|perhaps|it seems)\b", re.I)
 E = html.escape
+REFS = {}
 
 
 def catalogue_ids():
@@ -122,6 +123,27 @@ def evidence_html(text):
     return out
 
 
+def load_references():
+    """check ID -> [{publisher, title, url}], from framework/references.json."""
+    path = KIT_DIR / "framework" / "references.json"
+    if not path.is_file():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    sources = data.get("sources", {})
+    return {cid: [sources[k] for k in keys if k in sources]
+            for cid, keys in data.get("checks", {}).items()}
+
+
+def reference_html(refs):
+    """The standards a finding rests on, linked, under the fix."""
+    if not refs:
+        return ""
+    links = " ".join(
+        f'<a class="ref" href="{E(r["url"])}" target="_blank" rel="noopener noreferrer">'
+        f'{E(r["publisher"])}: {E(r["title"])}</a>' for r in refs)
+    return f'<div class="refs"><span class="refs-label">Reference</span>{links}</div>'
+
+
 def screenshot_section(domain):
     """Desktop and mobile captures, downscaled and inlined so the report is one file."""
     shots = OUT_ROOT / domain / "data" / "shots"
@@ -207,6 +229,8 @@ def agent_matrix(domain):
 
 
 def build(domain):
+    global REFS
+    REFS = load_references()
     fd = load_json(domain, "../findings.json")
     if fd is None:
         sys.exit(f"out/{domain}/findings.json not found")
@@ -228,7 +252,9 @@ def build(domain):
 
     es = fd["executive_summary"]
     body, toc = [], []
-    top = "".join(f"<li><b>{E(t['id'])}: {E(t['title'])}</b><span>{E(t['fix'])}</span></li>" for t in es.get("top_issues", []))
+    # The headline of each top issue links to the check it came from.
+    top = "".join(f'<li><a class="jump" href="#c-{E(t["id"])}"><b>{E(t["id"])}: {E(t["title"])}</b></a>'
+                  f"<span>{E(t['fix'])}</span></li>" for t in es.get("top_issues", []))
     paras = "".join(f"<p>{E(p)}</p>" for p in es.get("paragraphs", []))
     body.append(f'<section class="sec" id="summary" data-title="Executive summary"><h2>Executive summary</h2>{paras}'
                 f'<h3>Top issues to fix first</h3><ol class="top">{top}</ol></section>')
@@ -238,13 +264,21 @@ def build(domain):
     # The full check tables and the method notes are reference material and sit
     # behind the decisions they support.
     pcls = {"P0": "p-p0", "P1": "p-p1", "P2": "p-p2"}
-    arows = "".join(f'<tr><td>{pill(a["priority"], pcls.get(a["priority"], "p-p2"))}</td><td class="ck">{E(a["action"])}</td>'
-                    f'<td class="id">{E(a.get("checks", ""))}</td><td>{E(a.get("owner", ""))}</td><td>{E(a.get("effort", ""))}</td></tr>'
+
+    def check_links(spec):
+        """"AI5, AI11" becomes two links straight to those rows."""
+        ids = [s.strip() for s in str(spec or "").split(",") if s.strip()]
+        return " ".join(f'<a class="jump" href="#c-{E(i)}">{E(i)}</a>' for i in ids)
+
+    arows = "".join(f'<tr><td>{pill(a["priority"], pcls.get(a["priority"], "p-p2"))}</td>'
+                    f'<td class="ck">{E(a["action"])}</td>'
+                    f'<td class="id">{check_links(a.get("checks"))}</td>'
+                    f'<td>{E(a.get("owner", ""))}</td></tr>'
                     for a in sorted(fd["actions"], key=lambda a: a["priority"]))
     body.append('<section class="sec" id="plan" data-title="What to do, in order"><h2>What to do, in order</h2>'
                 '<p class="intro">P0: this week. P1: within 30 days. P2: this quarter. '
-                'Every action links to the checks that produced it.</p>'
-                '<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Action</th><th>Checks</th><th>Owner</th><th>Effort</th></tr></thead>'
+                'Each check number links to the finding it came from.</p>'
+                '<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Action</th><th>Checks</th><th>Owner</th></tr></thead>'
                 f'<tbody>{arows}</tbody></table></div></section>')
     toc.append(("plan", "", "What to do, in order", 0))
 
@@ -287,7 +321,14 @@ def build(domain):
                 fx = E(c.get("fix") or "No change needed.")
             else:
                 fx = E(c.get("fix", ""))
-            rows.append(f'<tr data-v="{v}" data-s="{sev}"><td class="id">{E(c["id"])}</td><td class="ck">{E(c["check"])}</td>'
+            # Every check is its own anchor, so the summary, the action plan
+            # and a pasted link all land on the exact row.
+            anchor = "c-" + c["id"]
+            fx += reference_html(REFS.get(c["id"], []))
+            rows.append(f'<tr id="{anchor}" data-v="{v}" data-s="{sev}">'
+                        f'<td class="id"><a class="anchor" href="#{anchor}" '
+                        f'title="Link to this check">{E(c["id"])}</a></td>'
+                        f'<td class="ck">{E(c["check"])}</td>'
                         f'<td>{vcell}</td><td class="ev">{ev}</td><td class="fx">{fx}</td></tr>')
         extra = agent_matrix(domain) if s["id"] == "AI" else ""
         body.append(f'<section class="sec" id="{sid}" data-title="{E(s["title"])}"><h2><span class="secnum">{E(s["id"])}</span>{E(s["title"])}</h2>'

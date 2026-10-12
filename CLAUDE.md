@@ -108,6 +108,16 @@ Crawler user-agent tests run from the auditor's network, not from each crawler's
 - **No em dashes (U+2014) anywhere.** Use a full stop, colon, comma or parentheses. The builder fails on them.
 - **No hedging:** may, might, possibly, could potentially, consider, perhaps, it seems. Measure it, then state it.
 - **Short sentences, plain words.** Numbers with units. Name URLs and files.
+- **Write Evidence and Fix for a non-technical reader.** The client is a business
+  owner or a marketing lead, not an engineer. Lead with the plain fact, then the
+  number. Expand a term the first time it appears ("canonical tag, which tells
+  Google which URL is the real one"). One idea per sentence, 25 words or fewer.
+  A Fix says who changes what, where, in the order they would do it. The field
+  names and file paths stay, because the report carries them as a citation under
+  the sentence rather than inside it.
+  - Not: "0 content images are missing alt text across 5,188 images."
+  - Yes: "Every one of the 5,188 images has alt text, the short description a
+    screen reader and Google Images read."
 - **No internal Wellows matters** in the client report, such as other clients, internal incidents or internal doc names.
 - **Do not mention Claude, AI assistants or how the report was produced.** Authorship is "Prepared by Wellows".
 - **Recommendations stay inside what was measured.** No generic SEO advice padding.

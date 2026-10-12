@@ -361,9 +361,9 @@ def actions_slide(prs, fd, n):
     if not actions:
         return None
     s, top = slide_base(prs, "Action plan", "What to do, in order")
-    widths = [Inches(0.95), BODY_W - Inches(4.6), Inches(1.5), Inches(1.15), Inches(1.0)]
+    widths = [Inches(0.95), BODY_W - Inches(3.6), Inches(1.5), Inches(1.15)]
     hx = MARGIN
-    for head, wd in zip(("Priority", "Action", "Checks", "Owner", "Effort"), widths):
+    for head, wd in zip(("Priority", "Action", "Checks", "Owner"), widths):
         textbox(s, hx, top, wd, Inches(0.26), head.upper(), size=9.5, bold=True,
                 color=MUTED)
         hx += wd
@@ -376,8 +376,7 @@ def actions_slide(prs, fd, n):
         cells = [(act.get("priority", ""), BRAND, True),
                  (body, INK, False),
                  (fit(act.get("checks", ""), 26), MUTED, False),
-                 (fit(act.get("owner", ""), 16), MUTED, False),
-                 (fit(act.get("effort", ""), 14), MUTED, False)]
+                 (fit(act.get("owner", ""), 16), MUTED, False)]
         for (text, color, bold), wd in zip(cells, widths):
             textbox(s, hx, top, wd, height, text, size=11, bold=bold, color=color)
             hx += wd
