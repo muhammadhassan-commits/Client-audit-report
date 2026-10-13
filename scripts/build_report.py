@@ -311,7 +311,8 @@ def build(domain):
             f'<span class="fixline"><b>Fix:</b> {E(t["fix"])}</span></li>')
     top = "".join(tops)
     paras = "".join(f"<p>{E(p)}</p>" for p in es.get("paragraphs", []))
-    body.append(f'<section class="sec" id="summary" data-title="Executive summary"><h2>Executive summary</h2>{paras}'
+    body.append(f'<section class="sec" id="summary" data-title="Executive summary"><h2>Executive summary</h2>'
+                f'<div class="prose">{paras}</div>'
                 f'<h3>Top issues to fix first</h3><ol class="top">{top}</ol></section>')
     toc.append(('summary', '', 'Executive summary', 0))
 
@@ -386,7 +387,11 @@ def build(domain):
                         f'<td class="ck">{E(c["check"])}</td>'
                         f'<td>{vcell}</td><td class="ev">{ev}</td><td class="fx">{fx}</td></tr>')
         extra = agent_matrix(domain) if s["id"] == "AI" else ""
-        body.append(f'<section class="sec" id="{sid}" data-title="{E(s["title"])}"><h2><span class="secnum">{E(s["id"])}</span>{E(s["title"])}</h2>'
+        # data-checks marks the sections the Show filter governs. Everything
+        # else (summary, plan, captures, method) is narrative and is stepped
+        # out of the way when a filter is on, rather than left behind looking
+        # like a result.
+        body.append(f'<section class="sec" id="{sid}" data-checks="1" data-title="{E(s["title"])}"><h2><span class="secnum">{E(s["id"])}</span>{E(s["title"])}</h2>'
                     f'<p class="intro">{E(s.get("intro", ""))}</p>'
                     '<div class="table-wrap"><table><thead><tr><th>ID</th><th>Check</th><th>Verdict</th><th>Evidence</th><th>Fix</th></tr></thead>'
                     f'<tbody>{"".join(rows)}</tbody></table></div>{extra}</section>')

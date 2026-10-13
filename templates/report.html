@@ -118,6 +118,17 @@ h2 { font-size: 32px; line-height: 36px; letter-spacing: -0.02em; margin: 0 0 12
 h3 { font-size: 20px; line-height: 24px; letter-spacing: -0.01em; margin: 24px 0 12px; }
 .intro, .sec > p { max-width: 86ch; color: var(--ink-2); font-size: 16px; }
 @media (min-width: 1024px) { .intro { font-size: 18px; } }
+/* A readable measure is about 75 characters, so prose cannot simply stretch to
+   a 1,200px column. On a wide screen it runs in two columns instead, which
+   uses the width rather than leaving a blank half beside every paragraph. */
+.prose { max-width: none; }
+@media (min-width: 1280px) {
+  .prose { column-count: 2; column-gap: 56px; }
+  .prose p { margin-top: 0; break-inside: avoid; }
+  .prose p + p { margin-top: 16px; }
+}
+.sec.hide, .toc li.hide { display: none; }
+#fcount { font-size: 14px; color: var(--ink-2); margin-left: 4px; }
 
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; margin: 16px 0; }
 table { border-collapse: collapse; width: 100%; font-size: 15px; }
@@ -162,7 +173,8 @@ tr.hide { display: none; }
 .tophead .chk:hover { background: var(--brand); color: #fff; }
 .top .fixline { margin-top: 8px; color: var(--ink); }
 
-.well { list-style: none; padding: 0; display: grid; gap: 10px; max-width: 100ch; }
+.well { list-style: none; padding: 0; display: grid; gap: 10px 48px; max-width: none; }
+@media (min-width: 1280px) { .well { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .well li { padding-left: 28px; position: relative; color: var(--ink-2); }
 .well li::before { content: "\2713"; position: absolute; left: 0; top: 0; color: var(--ok); font-weight: 700; }
 code { font-family: var(--mono); font-size: .88em; background: var(--tint); padding: 2px 6px; border-radius: 6px; overflow-wrap: anywhere; }
@@ -240,6 +252,7 @@ a.ref:hover { text-decoration: none; }
       <button class="chip" data-f="urgent" aria-pressed="false">Critical and High</button>
       <button class="chip" data-f="pass" aria-pressed="false">Passing</button>
       <button class="chip" data-f="need" aria-pressed="false">Needs client data</button>
+      <span id="fcount" aria-live="polite"></span>
     </div>
 %%BODY%%
     <p class="foot">Prepared by Wellows for %%CLIENT%% &middot; %%DATE%% &middot; Evidence files available on request.</p>
@@ -251,7 +264,7 @@ a.ref:hover { text-decoration: none; }
   var fill = document.getElementById('fill'), pct = document.getElementById('pct'),
       where = document.getElementById('where'), track = document.getElementById('track'),
       topbar = document.getElementById('topbar'), toTop = document.getElementById('totop');
-  var secs = Array.prototype.slice.call(document.querySelectorAll('.sec'));
+  var allSecs = Array.prototype.slice.call(document.querySelectorAll('.sec'));
   var links = {}; document.querySelectorAll('#toc a').forEach(function (a) { links[a.dataset.t] = a; });
   var ticking = false;
   toTop.addEventListener('click', function () {
@@ -264,25 +277,54 @@ a.ref:hover { text-decoration: none; }
     fill.style.width = p + '%'; pct.textContent = p + '% read'; track.setAttribute('aria-valuenow', p);
     toTop.classList.toggle('show', scrollY > 600);
     topbar.classList.toggle('pinned', scrollY > 8);
+    // Count only what is on screen, so a filter does not leave the progress
+    // readout and the contents rail pointing at hidden sections.
+    var secs = allSecs.filter(function (s) { return !s.classList.contains('hide'); });
     var line = innerHeight * 0.3, idx = 0;
     secs.forEach(function (s, i) { if (s.getBoundingClientRect().top <= line) idx = i; });
     if (p >= 99) idx = secs.length - 1;
     var cur = secs[idx];
     if (cur) where.textContent = 'Section ' + (idx + 1) + ' of ' + secs.length + ' · ' + cur.dataset.title;
-    secs.forEach(function (s, i) { var a = links[s.id]; if (a) a.classList.toggle('active', i === idx); });
+    allSecs.forEach(function (s) { var a = links[s.id]; if (!a) return;
+      a.classList.toggle('active', s === cur);
+      a.parentElement.classList.toggle('hide', s.classList.contains('hide')); });
   }
   addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
   addEventListener('resize', update); update();
   var chips = document.querySelectorAll('.chip');
+  var count = document.getElementById('fcount');
+  function matches(f, tr) {
+    var v = tr.dataset.v, s = tr.dataset.s;
+    return f === 'all' || (f === 'issue' && v === 'issue') || (f === 'pass' && v === 'pass') ||
+      (f === 'need' && v === 'need') || (f === 'urgent' && v === 'issue' && (s === 'critical' || s === 'high'));
+  }
+  function applyFilter(f) {
+    var shown = 0;
+    document.querySelectorAll('tr[data-v]').forEach(function (tr) {
+      var ok = matches(f, tr);
+      tr.classList.toggle('hide', !ok);
+      if (ok) shown++;
+    });
+    // Only the check sections are filtered. The narrative sections and the
+    // action plan are not results, so they step aside rather than sit there
+    // looking like matches, and a check section with nothing left is hidden
+    // instead of showing an empty table.
+    document.querySelectorAll('.sec').forEach(function (sec) {
+      if (f === 'all') { sec.classList.remove('hide'); return; }
+      if (sec.dataset.checks) {
+        sec.classList.toggle('hide', sec.querySelectorAll('tr[data-v]:not(.hide)').length === 0);
+      } else {
+        sec.classList.add('hide');
+      }
+    });
+    if (count) {
+      count.textContent = f === 'all' ? '' : shown + (shown === 1 ? ' check' : ' checks');
+    }
+    update();
+  }
   chips.forEach(function (c) { c.addEventListener('click', function () {
     chips.forEach(function (x) { x.setAttribute('aria-pressed', x === c ? 'true' : 'false'); });
-    var f = c.dataset.f;
-    document.querySelectorAll('tr[data-v]').forEach(function (tr) {
-      var v = tr.dataset.v, s = tr.dataset.s, show = f === 'all' || (f === 'issue' && v === 'issue') || (f === 'pass' && v === 'pass') ||
-        (f === 'need' && v === 'need') || (f === 'urgent' && v === 'issue' && (s === 'critical' || s === 'high'));
-      tr.classList.toggle('hide', !show);
-    });
-    update();
+    applyFilter(c.dataset.f);
   }); });
 })();
 </script>
