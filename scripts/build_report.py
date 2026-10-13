@@ -123,6 +123,37 @@ def evidence_html(text):
     return out
 
 
+def font_face_css():
+    """Inline Parkinsans as base64.
+
+    The design system allows one typeface and loads it from Google Fonts. A
+    client report has to render identically from an email attachment or a
+    network that blocks outbound requests, so the two variable subsets ship
+    inside the file instead. latin-ext is included because a Turkish client's
+    report needs the characters it carries.
+    """
+    out = []
+    for name, rng in (
+        ("pk-latin.woff2",
+         "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, "
+         "U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, "
+         "U+2212, U+2215, U+FEFF, U+FFFD"),
+        ("pk-latinext.woff2",
+         "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, "
+         "U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, "
+         "U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF"),
+    ):
+        path = KIT_DIR / "templates" / "fonts" / name
+        if not path.is_file():
+            continue
+        b64 = base64.b64encode(path.read_bytes()).decode()
+        out.append("@font-face{font-family:'Parkinsans';font-style:normal;"
+                   "font-weight:300 800;font-display:swap;"
+                   f"src:url(data:font/woff2;base64,{b64}) format('woff2');"
+                   f"unicode-range:{rng};}}")
+    return "\n".join(out)
+
+
 def load_references():
     """check ID -> [{publisher, title, url}], from framework/references.json."""
     path = KIT_DIR / "framework" / "references.json"
@@ -382,7 +413,8 @@ def build(domain):
                        f'<span class="c">{c if c else ""}</span></a></li>' for i, n, t, c in toc)
     tpl = (KIT_DIR / "templates" / "report.html").read_text(encoding="utf-8")
     client = fd["client_name"]
-    out = (tpl.replace("%%TITLE%%", E(f"{client} Technical Audit"))
+    out = (tpl.replace("%%FONTS%%", font_face_css())
+              .replace("%%TITLE%%", E(f"{client} Technical Audit"))
               .replace("%%DATE%%", E(fd["audit_date"]))
               .replace("%%H1%%", f"Can every search and AI engine reach <em>{E(fd['domain'])}</em>?")
               .replace("%%HEADLINE%%", E(es["headline"]))

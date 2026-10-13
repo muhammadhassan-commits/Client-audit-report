@@ -18,7 +18,9 @@ specific and evidenced**. Never invent a value.
 | `framework/agents.json` | 28 AI, search and link-preview crawlers with real user agents, plus the engine-to-crawler map |
 | `framework/findings-schema.md` | The exact `findings.json` format and the rules the builder enforces |
 | `scripts/` | Evidence collectors (01 to 06), `run_all.py`, `build_report.py` and `07_build_deck.py` |
-| `templates/report.html` | Wellows-branded report: reading-progress bar, filters, light and dark mode |
+| `templates/report.html` | The client report, built to the Wellows design system |
+| `templates/fonts/` | Parkinsans, inlined into every report at build time |
+| `framework/references.json` | The standard behind each check, printed under the finding |
 | `out/<domain>/data/` | Raw evidence (JSON, robots.txt, llms.txt, crawl.jsonl, screenshots) |
 | `out/<domain>/findings.json` | Your verdicts (you write this) |
 | `out/<domain>/report/` | The built HTML report, the .pptx client deck and summary.md |
@@ -121,6 +123,42 @@ Crawler user-agent tests run from the auditor's network, not from each crawler's
 - **No internal Wellows matters** in the client report, such as other clients, internal incidents or internal doc names.
 - **Do not mention Claude, AI assistants or how the report was produced.** Authorship is "Prepared by Wellows".
 - **Recommendations stay inside what was measured.** No generic SEO advice padding.
+
+## Design: the Wellows design system governs every report
+
+`templates/report.html` is built to the Wellows design system. Apply it to every
+audit. The full spec lives with the design team; these are the constraints the
+report depends on, and they are hard rules, not preferences.
+
+- **One brand blue: `#0452F0`.** Never `#0554F2`, never `blue-600`, never a
+  hand-picked darker hover. Hover is the same blue at 81% (`#0452f0cf`), a
+  shadow, or a lift.
+- **One typeface: Parkinsans.** No heading and body split, no second face.
+  `build_report.py` inlines `templates/fonts/*.woff2` as base64, so the report
+  keeps the brand face with no network call. Keep latin-ext: a Turkish client's
+  report needs it.
+- **No purple, indigo, orange, teal or pink, anywhere.** The palette is blue,
+  neutrals and three status colours.
+- **Status is emerald, rose and amber**, never green, red or yellow, so a status
+  never reads as a call to action.
+- **Section backgrounds only:** `#FFFFFF`, `#F4F5F7`, `#E6EEFE`, `#0047AB`,
+  `#0A0A0A`. Never invent a tint.
+- **There is no dark mode.** A dark section is a choice inside a light page.
+  Never add a `prefers-color-scheme` variant.
+- **Radius:** cards and chips `12px`, controls and badges `8px`, pills full.
+- **Shadows:** three steps only. A shadow is not a border; for definition use
+  `1px solid #E5E7EB`.
+- **Focus is identical everywhere:** a 2px `#0452F0` outline at 2px offset,
+  white on a dark section. Never remove it.
+- **Motion:** 200ms for state, 300ms for movement, `ease-out`, and anything that
+  moves respects `prefers-reduced-motion`. Never animate height, width or margin.
+- **Readable with JavaScript off.** Nothing starts hidden and is revealed by a
+  script.
+
+The report container is wider than the design system's 1440px marketing width
+(`max-width: 1600px`, 48px side padding at desktop). That is deliberate: a
+133-row audit is a document, not a landing page, and the narrower container left
+a third of a wide screen empty.
 
 ## Bot policy guidance (for AI4 and the action plan)
 
