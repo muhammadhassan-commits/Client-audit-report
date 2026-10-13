@@ -118,15 +118,23 @@ h2 { font-size: 32px; line-height: 36px; letter-spacing: -0.02em; margin: 0 0 12
 h3 { font-size: 20px; line-height: 24px; letter-spacing: -0.01em; margin: 24px 0 12px; }
 .intro, .sec > p { max-width: 86ch; color: var(--ink-2); font-size: 16px; }
 @media (min-width: 1024px) { .intro { font-size: 18px; } }
-/* A readable measure is about 75 characters, so prose cannot simply stretch to
-   a 1,200px column. On a wide screen it runs in two columns instead, which
-   uses the width rather than leaving a blank half beside every paragraph. */
-.prose { max-width: none; }
-@media (min-width: 1280px) {
-  .prose { column-count: 2; column-gap: 56px; }
-  .prose p { margin-top: 0; break-inside: avoid; }
-  .prose p + p { margin-top: 16px; }
-}
+/* Summary: narrative at a readable measure, key figures in a panel beside it.
+   Splitting three paragraphs into newspaper columns left a ragged, unbalanced
+   gap. A report puts the numbers in the space instead. */
+.summary-grid { display: grid; gap: 32px; align-items: start; }
+@media (min-width: 1280px) { .summary-grid { grid-template-columns: minmax(0, 1fr) 340px; gap: 56px; } }
+.prose { max-width: 72ch; }
+.prose p:first-child { margin-top: 0; }
+.glance { border: 1px solid var(--line); border-radius: 12px; background: var(--tint); padding: 24px; }
+.glance h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: -0.03em; color: var(--brand); }
+.glance dl { margin: 0; display: grid; gap: 0; }
+.glance div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 10px 0; border-bottom: 1px solid var(--line); }
+.glance div:last-child { border-bottom: 0; padding-bottom: 0; }
+.glance dt { font-size: 15px; color: var(--ink-2); }
+.glance dd { margin: 0; font-size: 20px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.glance dd.is-ok { color: var(--ok); } .glance dd.is-bad { color: var(--bad); }
 .sec.hide, .toc li.hide { display: none; }
 #fcount { font-size: 14px; color: var(--ink-2); margin-left: 4px; }
 

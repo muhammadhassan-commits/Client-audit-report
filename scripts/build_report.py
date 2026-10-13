@@ -123,6 +123,12 @@ def evidence_html(text):
     return out
 
 
+def crawler_count(domain):
+    """How many crawler user agents were actually tested, from the evidence."""
+    ca = load_json(domain, "crawler_access.json") or {}
+    return len(ca.get("agents", [])) or ""
+
+
 def font_face_css():
     """Inline Parkinsans as base64.
 
@@ -311,8 +317,22 @@ def build(domain):
             f'<span class="fixline"><b>Fix:</b> {E(t["fix"])}</span></li>')
     top = "".join(tops)
     paras = "".join(f"<p>{E(p)}</p>" for p in es.get("paragraphs", []))
+    # Key figures sit beside the narrative. Every one is measured, not derived
+    # from an estimate, so the panel can be read on its own.
+    issues_total = vc["Issue"]
+    urgent = sc["Critical"] + sc["High"]
+    glance = [("Checks run", len(allc), ""),
+              ("Passing", vc["Pass"], "is-ok"),
+              ("Issues found", issues_total, "is-bad" if issues_total else ""),
+              ("Critical and High", urgent, "is-bad" if urgent else "is-ok"),
+              ("Pages crawled", meth_pages := fd.get("method", {}).get("pages_crawled", ""), ""),
+              ("Crawlers tested", crawler_count(domain), "")]
+    glance_html = "".join(
+        f'<div><dt>{E(label)}</dt><dd class="{cls}">{E(str(val))}</dd></div>'
+        for label, val, cls in glance if val != "")
     body.append(f'<section class="sec" id="summary" data-title="Executive summary"><h2>Executive summary</h2>'
-                f'<div class="prose">{paras}</div>'
+                f'<div class="summary-grid"><div class="prose">{paras}</div>'
+                f'<aside class="glance"><h3>At a glance</h3><dl>{glance_html}</dl></aside></div>'
                 f'<h3>Top issues to fix first</h3><ol class="top">{top}</ol></section>')
     toc.append(('summary', '', 'Executive summary', 0))
 
