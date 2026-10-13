@@ -44,8 +44,28 @@ Audit only domains the user owns or is engaged to audit (a Wellows client or Wel
 
 ### 2. Collect evidence
 
-Run `python3 scripts/run_all.py <domain>` from the kit root.
-- Add `--max-pages 300` for large sites.
+Run `python3 scripts/run_all.py <domain> --max-pages 50 --link-check 120` from the
+kit root.
+- **50 pages is the standing default, whatever the size of the site.** A larger
+  crawl does not change the verdicts: site-wide template faults show up in the
+  first 50 pages, and the extra pages cost minutes per audit. Raise it only when
+  the user asks for a deeper crawl.
+- **Every one of the 50 must be an important, indexable URL.** Indexable means:
+  returns 200 with no redirect hop, is listed in a sitemap, carries a
+  self-referencing canonical, and is not `noindex` in the meta robots tag or the
+  `X-Robots-Tag` header. Important means a URL the business earns money or trust
+  from.
+- Pick in this order, dropping the rest: homepage, the main service and category
+  hubs, the highest-value location or product pages, the posts with the most
+  internal links, then the trust pages (About, Contact, Privacy, Terms).
+- **Never spend a slot on** author archives, tag and date archives, paginated
+  `/page/2/` URLs, feeds, search and parameter URLs, CMS fragment post types
+  (If-So triggers, timeline items, popup content), or anything already excluded
+  by robots.txt. Audit those only when a check is about them, such as A10.
+- Spread the 50 across templates. A sample of one template repeated 50 times
+  proves nothing about the rest.
+- Say the crawl size and how the 50 were chosen in the method notes, so the
+  client knows what the sample is.
 - If `PSI_API_KEY` is set in the environment, PageSpeed uses it. Without a key, PSI can rate-limit. If it does, rerun `05_performance.py` later, or mark the K checks Not tested with the reason.
 - **If preflight reports the site unreachable, or Chrome itself gets a challenge page on the homepage:** stop and tell the user. Do not write findings from partial data.
 
