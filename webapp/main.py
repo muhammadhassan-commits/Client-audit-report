@@ -197,10 +197,12 @@ def safe_path(root: Path, rel: str) -> Path:
 
 # ------------------------------------------------------------------- the work
 
-def run_audit(job_id: str, domain: str, max_pages: int, skip_psi: bool, skip_render: bool):
+def run_audit(job_id: str, domain: str, max_pages: int, skip_psi: bool, skip_render: bool,
+              delay: float = 0.5):
     job = _jobs[job_id]
     log_path = LOG_DIR / f"{job_id}.log"
-    cmd = [sys.executable, "run_all.py", domain, "--max-pages", str(max_pages)]
+    cmd = [sys.executable, "run_all.py", domain, "--max-pages", str(max_pages),
+           "--delay", str(delay)]
     if skip_psi:
         cmd.append("--skip-psi")
     if skip_render:
@@ -269,7 +271,11 @@ def load_jobs():
 
 class AuditRequest(BaseModel):
     domain: str
-    max_pages: int = Field(150, ge=1, le=1000)
+    max_pages: int = Field(50, ge=1, le=1000)
+    # Seconds between requests. Raise it for a small host that drops a client
+    # opening several connections at once: at the default the whole run then
+    # collects timeouts instead of evidence.
+    delay: float = Field(0.5, ge=0.0, le=60.0)
     skip_psi: bool = False
     skip_render: bool = False
 
@@ -314,12 +320,14 @@ def start_audit(req: AuditRequest):
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     job_id = uuid.uuid4().hex[:12]
     job = {"id": job_id, "domain": domain, "status": "queued", "created_at": _now(),
-           "max_pages": req.max_pages, "skip_psi": req.skip_psi, "skip_render": req.skip_render,
+           "max_pages": req.max_pages, "delay": req.delay, "skip_psi": req.skip_psi,
+           "skip_render": req.skip_render,
            "returncode": None, "error": None, "started_at": None, "finished_at": None}
     with _jobs_lock:
         _jobs[job_id] = job
     threading.Thread(target=run_audit, daemon=True,
-                     args=(job_id, domain, req.max_pages, req.skip_psi, req.skip_render)).start()
+                     args=(job_id, domain, req.max_pages, req.skip_psi, req.skip_render,
+                           req.delay)).start()
     return job
 
 

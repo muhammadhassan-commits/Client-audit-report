@@ -107,7 +107,9 @@ pre{background:var(--soft);border:1px solid var(--line);border-radius:7px;paddin
         <div style="flex:2"><label for="domain">Domain</label>
           <input type="text" id="domain" placeholder="example.com" autocomplete="off"></div>
         <div style="max-width:8rem"><label for="pages">Max pages</label>
-          <input type="number" id="pages" value="150" min="1" max="1000"></div>
+          <input type="number" id="pages" value="50" min="1" max="1000"></div>
+        <div style="max-width:9rem"><label for="delay">Seconds between requests</label>
+          <input type="number" id="delay" value="0.5" min="0" max="60" step="0.5"></div>
         <button id="go">Start</button>
       </div>
       <div class="opts">
@@ -217,7 +219,8 @@ $("#go").onclick = async () => {
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
         domain,
-        max_pages: Number($("#pages").value) || 150,
+        max_pages: Number($("#pages").value) || 50,
+        delay: Number($("#delay").value) || 0,
         skip_psi: $("#skip-psi").checked,
         skip_render: $("#skip-render").checked,
       }),
