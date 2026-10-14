@@ -131,12 +131,37 @@ def main(domain):
                     page.goto(u, wait_until="networkidle" if js else "load", timeout=60000)
                     page.wait_for_timeout(2500)
                     page.screenshot(path=str(shots / f"{label}-{slug}.png"), full_page=True)
+                    # Measure what is painted, not what is in the markup. Text
+                    # that sits in the DOM behind opacity 0 or under a preloader
+                    # still counts in page.content(), which is how a homepage
+                    # that renders as a blank spinner once scored 80 percent.
+                    entry.setdefault("painted", {})[label] = page.evaluate("""() => {
+                      const seen = e => { const s = getComputedStyle(e);
+                        return s.display !== 'none' && s.visibility !== 'hidden' && +s.opacity > 0.05
+                               && e.getBoundingClientRect().height > 0; };
+                      const t = (document.body.innerText || '').replace(/[ \t\n\r]+/g, ' ').trim();
+                      return {words: t ? t.split(' ').length : 0,
+                              visible_links: [...document.querySelectorAll('a[href]')].filter(seen).length,
+                              visible_h1: [...document.querySelectorAll('h1')].filter(seen).length,
+                              h1_in_markup: document.querySelectorAll('h1').length,
+                              blocking_overlay: !!document.querySelector(
+                                '.preloader, #preloader, .loader, .page-loader, .spinner')};
+                    }""")
                     if not js:
                         entry["js_off"] = summarize(page.content())
                 except Exception as e:  # noqa: BLE001
                     entry.setdefault("js_capture_errors", {})[label] = str(e)[:200]
                 finally:
                     ctx.close()
+            pt = entry.get("painted", {})
+            if pt.get("js-on") and pt.get("js-off"):
+                on, off = pt["js-on"], pt["js-off"]
+                entry["painted_parity"] = {
+                    "words_share": round(off["words"] / max(1, on["words"]), 2),
+                    "visible_links_share": round(off["visible_links"] / max(1, on["visible_links"]), 2),
+                    "visible_h1_js_off": off["visible_h1"],
+                    "h1_in_markup": off["h1_in_markup"],
+                    "preloader_present": off["blocking_overlay"]}
             if entry.get("js_off") and entry.get("desktop", {}).get("rendered"):
                 jd, dd = entry["js_off"], entry["desktop"]["rendered"]
                 entry["js_parity"] = {
