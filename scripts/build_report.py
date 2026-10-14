@@ -118,29 +118,35 @@ def split_source(text):
 URL_IN_TEXT = re.compile(r"https?://[^\s<>\"']+")
 
 
-def linkify(escaped):
-    """Turn every address in already-escaped prose into a link you can click.
+def linkify(text):
+    """Escape prose and turn every address in it into a link you can click.
 
-    The report is read away from the site, so an address the reader has to
-    retype is an address they do not check. Trailing punctuation is left out of
-    the link, because "ends at https://example.com/about." should not link to a
-    full stop.
+    The escaping happens per fragment rather than up front, because escaping
+    first turns a quote into &quot; and the address pattern then swallows the
+    entity along with it.
+
+    Trailing punctuation is left outside the link, so "ends at
+    https://example.com/about." does not link to the full stop.
     """
-    def one(m):
-        url = m.group(0)
-        tail = ""
+    out, last = [], 0
+    for m in URL_IN_TEXT.finditer(text or ""):
+        url, tail = m.group(0), ""
         while url and url[-1] in ".,;:)]":
             tail = url[-1] + tail
             url = url[:-1]
-        if not url:
-            return m.group(0)
-        return (f'<a class="u" href="{url}" target="_blank" rel="noopener">{url}</a>{tail}')
-    return URL_IN_TEXT.sub(one, escaped)
+        out.append(E(text[last:m.start()]))
+        if url:
+            eu = E(url)
+            out.append(f'<a class="u" href="{eu}" target="_blank" rel="noopener">{eu}</a>')
+        out.append(E(tail))
+        last = m.end()
+    out.append(E((text or "")[last:]))
+    return "".join(out)
 
 
 def evidence_html(text):
     prose, src = split_source(text)
-    out = linkify(E(prose))
+    out = linkify(prose)
     if src:
         out += f'<span class="src" title="Evidence file">{E(src)}</span>'
     return out
@@ -452,15 +458,15 @@ def build(domain):
             vcell = pill(c["verdict"], "v-" + v) + (" " + pill(c["severity"], "s-" + sev) if c["verdict"] == "Issue" else "")
             ev = evidence_html(c.get("evidence", ""))
             if c["verdict"] == "Needs client data":
-                ev = (ev + "<br>" if ev else "") + "<b>Data needed:</b> " + linkify(E(c.get("needs", "")))
+                ev = (ev + "<br>" if ev else "") + "<b>Data needed:</b> " + linkify(c.get("needs", ""))
             fx = ""
             if c["verdict"] == "Issue":
-                fx = (f"<span class='imp'><b>Impact:</b> {linkify(E(c['impact']))}</span>"
-                      f"{linkify(E(c['fix']))}")
+                fx = (f"<span class='imp'><b>Impact:</b> {linkify(c['impact'])}</span>"
+                      f"{linkify(c['fix'])}")
             elif c["verdict"] == "Pass":
-                fx = linkify(E(c.get("fix") or "No change needed."))
+                fx = linkify(c.get("fix") or "No change needed.")
             else:
-                fx = linkify(E(c.get("fix", "")))
+                fx = linkify(c.get("fix", ""))
             # Every check is its own anchor, so the summary, the action plan
             # and a pasted link all land on the exact row.
             anchor = "c-" + c["id"]
