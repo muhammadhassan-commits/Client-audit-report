@@ -452,8 +452,16 @@ def build(domain):
     glance_html = "".join(
         f'<div><dt>{E(label)}</dt><dd class="{cls}">{E(str(val))}</dd></div>'
         for label, val, cls in glance if val != "")
+    # The reader's first question is what the audit covered, so the summary says
+    # how many pages were read and links straight to the list.
+    crawled_html, n_crawled = crawled_section(domain, fd)
+    scope = ""
+    if n_crawled:
+        scope = (f'<p class="scope">This audit read <b>{n_crawled}</b> '
+                 f'{"page" if n_crawled == 1 else "pages"} of {E(domain)}. '
+                 f'<a href="#crawled">See every URL that was checked</a>.</p>')
     body.append(f'<section class="sec" id="summary" data-title="Executive summary"><h2>Executive summary</h2>'
-                f'<div class="summary-grid"><div class="prose">{paras}</div>'
+                f'<div class="summary-grid"><div class="prose">{paras}{scope}</div>'
                 f'<aside class="glance"><h3>At a glance</h3><dl>{glance_html}</dl></aside></div>'
                 f'<h3>Top issues to fix first</h3><ol class="top">{top}</ol></section>')
     toc.append(('summary', '', 'Executive summary', 0))
@@ -562,7 +570,6 @@ def build(domain):
         ps = "".join(f"<li>{E(p)}</li>" for p in fd["prompt_set"])
         body.append(f'<section class="sec" id="prompts" data-title="Prompts to track"><h2>Prompts to track in Wellows</h2><ol>{ps}</ol></section>')
         toc.append(("prompts", "", "Prompts to track", 0))
-    crawled_html, n_crawled = crawled_section(domain, fd)
     if crawled_html:
         body.append(f'<section class="sec" id="crawled" data-title="Crawled URLs">'
                     f'<h2>Crawled URLs</h2><p class="lede">Every page this audit read, with the '
