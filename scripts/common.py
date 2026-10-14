@@ -49,9 +49,20 @@ CHROME_UA = (
 DEFAULT_TIMEOUT = 25
 # Polite ceiling for every script. Small hosts on shared Apache often drop a
 # client that opens more than a handful of connections, and the whole audit then
-# collects timeouts instead of evidence. Lower it with AUDIT_MAX_RPS, for
-# example AUDIT_MAX_RPS=0.2 for one request every five seconds.
+# collects timeouts instead of evidence.
+#
+# Two ways to slow down, and the delay wins when both are set:
+#   AUDIT_REQUEST_DELAY=5     seconds to wait between requests
+#   AUDIT_MAX_RPS=0.2         the same thing said as a rate
 MAX_RPS = float(os.environ.get("AUDIT_MAX_RPS") or 2.0)
+REQUEST_DELAY = float(os.environ.get("AUDIT_REQUEST_DELAY") or 0.0)
+
+
+def request_gap(rps: float = None) -> float:
+    """Seconds to leave between requests. A delay set in the environment wins."""
+    if REQUEST_DELAY > 0:
+        return REQUEST_DELAY
+    return 1.0 / (rps or MAX_RPS)
 
 CHALLENGE_MARKERS = [
     "just a moment", "cf-chl", "challenge-platform", "attention required",
@@ -98,7 +109,7 @@ class Fetcher:
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9",
         })
-        self.min_gap = 1.0 / rps
+        self.min_gap = request_gap(rps)
         self._last = 0.0
 
     def _wait(self):

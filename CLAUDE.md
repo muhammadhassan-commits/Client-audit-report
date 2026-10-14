@@ -66,6 +66,15 @@ kit root.
   proves nothing about the rest.
 - Say the crawl size and how the 50 were chosen in the method notes, so the
   client knows what the sample is.
+- **Slow down for a small host.** `--delay <seconds>` sets the wait between
+  requests for every step. The default is 0.5 seconds, the 2 per second ceiling.
+  Shared Apache hosting often drops a client that opens several connections at
+  once, and once dropped the whole audit collects timeouts instead of evidence.
+  If preflight succeeds and later steps start timing out at the TCP layer, that
+  is what happened: wait for the block to clear, then rerun with `--delay 5`.
+  Say the delay in the method notes when it is not the default, and report the
+  host's behaviour as a crawler-access finding, because Googlebot crawls faster
+  than this kit does.
 - If `PSI_API_KEY` is set in the environment, PageSpeed uses it. Without a key, PSI can rate-limit. If it does, rerun `05_performance.py` later, or mark the K checks Not tested with the reason.
 - **If preflight reports the site unreachable, or Chrome itself gets a challenge page on the homepage:** stop and tell the user. Do not write findings from partial data.
 
