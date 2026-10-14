@@ -82,6 +82,7 @@ def main(domain):
         for u in urls:
             raw = summarize(raw_html(f, u, domain))
             entry = {"raw": raw}
+            slug = re.sub(r"[^a-z0-9]+", "-", u.lower())[-60:]
             for label, kw in (("desktop", {"viewport": {"width": 1366, "height": 900}}),
                               ("mobile", {"viewport": {"width": 390, "height": 844}, "is_mobile": True, "user_agent":
                                           "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"})):
@@ -109,7 +110,6 @@ def main(domain):
                   }
                   return {share: Math.round(best*100), selector: sel};
                 }""")
-                slug = re.sub(r"[^a-z0-9]+", "-", u.lower())[-60:]
                 page.screenshot(path=str(shots / f"{label}-{slug}.png"))
                 entry[label] = {"rendered": rendered, "console_errors": errors[:10], "largest_overlay": cover}
                 ctx.close()
@@ -120,6 +120,32 @@ def main(domain):
                     "h1_same": raw["h1"] == d["h1"], "raw_words_share": round(raw["words"] / max(1, d["words"]), 2),
                     "raw_links_share": round(raw["links"] / max(1, d["links"]), 2),
                     "jsonld_raw_vs_rendered": [raw["jsonld_blocks"], d["jsonld_blocks"]]}
+            # The same page with JavaScript on and off, full height, so the
+            # parity numbers above have a picture a client can read. A crawler
+            # that does not run JavaScript sees the second one.
+            for label, js in (("js-on", True), ("js-off", False)):
+                ctx = b.new_context(viewport={"width": 1366, "height": 900},
+                                    java_script_enabled=js)
+                page = ctx.new_page()
+                try:
+                    page.goto(u, wait_until="networkidle" if js else "load", timeout=60000)
+                    page.wait_for_timeout(2500)
+                    page.screenshot(path=str(shots / f"{label}-{slug}.png"), full_page=True)
+                    if not js:
+                        entry["js_off"] = summarize(page.content())
+                except Exception as e:  # noqa: BLE001
+                    entry.setdefault("js_capture_errors", {})[label] = str(e)[:200]
+                finally:
+                    ctx.close()
+            if entry.get("js_off") and entry.get("desktop", {}).get("rendered"):
+                jd, dd = entry["js_off"], entry["desktop"]["rendered"]
+                entry["js_parity"] = {
+                    "title_same": jd["title"] == dd["title"],
+                    "h1_same": jd["h1"] == dd["h1"],
+                    "words_share": round(jd["words"] / max(1, dd["words"]), 2),
+                    "links_share": round(jd["links"] / max(1, dd["links"]), 2),
+                    "jsonld_js_off_vs_on": [jd["jsonld_blocks"], dd["jsonld_blocks"]]}
+
             m = entry.get("mobile", {}).get("rendered")
             if d and m:
                 entry["mobile_parity"] = {"h1_same": d["h1"] == m["h1"], "words_ratio": round(m["words"] / max(1, d["words"]), 2),

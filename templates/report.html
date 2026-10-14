@@ -198,6 +198,12 @@ a.u { color: var(--brand); text-decoration: underline; text-decoration-thickness
 a.u:hover { color: var(--brand-hover); }
 a.u:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 2px; }
 .lede { color: var(--ink-2); max-width: 72ch; margin: 0 0 20px; }
+/* The JavaScript on and off pair. Full-page captures are tall, so they sit in
+   a scrollable frame of equal height rather than stretching the section. */
+.shot-js { flex: 1 1 0; min-width: 0; }
+.shot-js img { width: 100%; height: auto; max-height: 720px; object-fit: cover;
+               object-position: top; border: 1px solid var(--line); border-radius: 12px; }
+.jsnote { color: var(--ink-2); margin: 0 0 14px; max-width: 72ch; }
 /* Deep links */
 td.id a.anchor { color: var(--brand); text-decoration: none; }
 td.id a.anchor:hover { text-decoration: underline; }

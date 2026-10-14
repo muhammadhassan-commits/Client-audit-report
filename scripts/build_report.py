@@ -289,6 +289,59 @@ def crawled_section(domain, fd):
             len(rows))
 
 
+def js_section(domain):
+    """The same page with JavaScript on and off, full height, side by side.
+
+    M1 reports this as a ratio, and a ratio is not an argument. The pair of
+    pictures is: whatever is missing from the right-hand image is what a crawler
+    that does not run JavaScript never sees.
+    """
+    shots = OUT_ROOT / domain / "data" / "shots"
+    if not shots.is_dir():
+        return "", 0
+    try:
+        from PIL import Image
+    except ImportError:
+        return "", 0
+    rendered = (load_json(domain, "render.json") or {}).get("pages", {})
+    cards = []
+    for on in sorted(shots.glob("js-on-*.png"))[:4]:
+        off = shots / on.name.replace("js-on-", "js-off-", 1)
+        if not off.is_file():
+            continue
+        slug = on.stem[len("js-on-"):]
+        pair = []
+        for path, label in ((on, "JavaScript on"), (off, "JavaScript off")):
+            try:
+                with Image.open(path) as im:
+                    im = im.convert("RGB")
+                    im.thumbnail((620, 4200), Image.LANCZOS)
+                    buf = io.BytesIO()
+                    im.save(buf, "JPEG", quality=74, optimize=True)
+            except Exception:  # noqa: BLE001
+                continue
+            b64 = base64.b64encode(buf.getvalue()).decode()
+            pair.append(f'<figure class="shot shot-js">'
+                        f'<figcaption class="devcap"><span class="dev">{E(label)}</span></figcaption>'
+                        f'<img alt="{E(label)} full page capture" '
+                        f'src="data:image/jpeg;base64,{b64}"></figure>')
+        if len(pair) != 2:
+            continue
+        url = slug_to_url(domain, slug)
+        note = ""
+        for u, e in rendered.items():
+            if re.sub(r"[^a-z0-9]+", "-", u.lower())[-60:] == slug and e.get("js_parity"):
+                jp = e["js_parity"]
+                note = (f'<p class="jsnote">With JavaScript switched off this page keeps '
+                        f'{int(jp["words_share"] * 100)} percent of its words and '
+                        f'{int(jp["links_share"] * 100)} percent of its links, and the main '
+                        f'heading is {"the same" if jp["h1_same"] else "different"}.</p>')
+                break
+        cards.append(f'<div class="shotrow"><h3>{E(url)}</h3>{note}'
+                     f'<div class="shots">{"".join(pair)}</div></div>')
+    return "".join(cards), len(cards)
+
+
 def slug_to_url(domain, slug):
     """06_render.py names a capture after a slug of its URL; recover the URL."""
     rendered = (load_json(domain, "render.json") or {}).get("pages", {})
@@ -435,6 +488,16 @@ def build(domain):
                     'desktop beside mobile, straight from the live site.</p>'
                     f'{shots_html}</section>')
         toc.append(("shots", "", "How the pages render", 0))
+    js_html, n_js = js_section(domain)
+    if js_html:
+        body.append('<section class="sec" id="js" data-title="With and without JavaScript">'
+                    '<h2>With and without JavaScript</h2>'
+                    '<p class="intro">The same page captured twice at full height: once in a '
+                    'browser running JavaScript, and once with JavaScript switched off. '
+                    'Whatever is missing from the second image is what a crawler that does not '
+                    'run JavaScript never sees.</p>'
+                    f'{js_html}</section>')
+        toc.append(("js", "", "With and without JavaScript", n_js))
 
     well = "".join(f"<li>{E(w)}</li>" for w in fd.get("working_well", []))
     body.append(f'<section class="sec" id="well" data-title="What is working well"><h2>What is already working</h2>'
