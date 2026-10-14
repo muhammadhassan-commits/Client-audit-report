@@ -130,6 +130,19 @@ Include:
 - **Not applicable:** the concrete reason, e.g. "Single-language site: no hreflang and no localized URLs".
 - Use the default severity from the catalogue. Change it only with a reason written in the evidence.
 
+### Never report a social or directory link as broken on a bot status code
+
+Facebook, Instagram, X, LinkedIn, Yelp and the big directories answer automated
+clients with 403, 999, 400 or a challenge as a matter of course, and serve the
+same URL normally to a person. A status code from one of those hosts proves
+nothing about the link. Leave them out of H2 entirely rather than reporting them
+and explaining them away.
+
+What is still worth reporting about a social link is what the URL itself says:
+a bare domain such as `https://facebook.com` that names no account, a profile
+that contradicts the brand, or a missing `sameAs`. Those are I8 findings about
+the markup, not H2 findings about the link being down.
+
 ### The network limitation (state it once in the method notes)
 
 Crawler user-agent tests run from the auditor's network, not from each crawler's IP ranges. They prove robots.txt rules and how the server or CDN treats that user agent. How the CDN treats the real crawler IPs is AI11, Needs client data. Never claim a real crawler is or is not blocked from UA tests alone, except where robots.txt itself blocks it.
@@ -149,6 +162,24 @@ Crawler user-agent tests run from the auditor's network, not from each crawler's
   - Not: "0 content images are missing alt text across 5,188 images."
   - Yes: "Every one of the 5,188 images has alt text, the short description a
     screen reader and Google Images read."
+- **Name every URL in full, as an absolute address.** Write
+  `https://example.com/rentals.html`, never `/rentals.html` and never "the
+  rentals page". The reader opens the report away from the site and needs to
+  paste the address straight into a browser or a ticket. This applies in
+  evidence, impact and fix alike, and to the examples inside a count.
+- **Evidence is complete sentences, not fragments.** "0 of 17 images" and
+  "canonical: none" are notes to yourself. Write "None of the 17 images on
+  https://example.com/products.html declares a width or a height." A reader who
+  knows technical SEO still has to be told what was measured, where, and what
+  the number means, because they were not there when it was measured.
+- **A link finding names the target, the anchor text and the pages it sits on.**
+  Never write "a link returns 404" or "linked from 2 pages". Write the broken
+  address in full, quote the anchor text the visitor clicks, and name two or
+  three of the pages that carry it, with "and N others" if there are more. The
+  developer has to find the link to fix it, and anchor text plus a page name is
+  how they find it. The same applies to redirecting links, generic anchor text
+  and links with no accessible name: say what the reader sees and where.
+
 - **No internal Wellows matters** in the client report, such as other clients, internal incidents or internal doc names.
 - **Do not mention Claude, AI assistants or how the report was produced.** Authorship is "Prepared by Wellows".
 - **Recommendations stay inside what was measured.** No generic SEO advice padding.
