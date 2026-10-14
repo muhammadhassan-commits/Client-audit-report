@@ -180,6 +180,20 @@ Crawler user-agent tests run from the auditor's network, not from each crawler's
   how they find it. The same applies to redirecting links, generic anchor text
   and links with no accessible name: say what the reader sees and where.
 
+- **The executive summary is short.** A headline and at most two short
+  paragraphs, then the top issues. It is the part a busy person reads standing
+  up, and anything longer gets skipped, which wastes the one section that is
+  guaranteed to be read. Everything else belongs in the check it came from. Say
+  in the summary how many pages were audited, because the reader's first
+  question is what the audit covered.
+- **No Sources section.** Every check already prints the standard behind it from
+  `framework/references.json`, so a second list at the end repeats that and
+  gives the reader somewhere to stop reading. Leave `sources` out of
+  findings.json.
+- **List every crawled URL.** The report prints them under its own heading, with
+  the status each returned, taken from the evidence rather than retyped. A
+  client who asks what was checked deserves the list, not a number.
+
 - **No internal Wellows matters** in the client report, such as other clients, internal incidents or internal doc names.
 - **Do not mention Claude, AI assistants or how the report was produced.** Authorship is "Prepared by Wellows".
 - **Recommendations stay inside what was measured.** No generic SEO advice padding.

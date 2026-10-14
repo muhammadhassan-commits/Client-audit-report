@@ -65,4 +65,8 @@ and refuses to build until every error is fixed.
 - **Hedging words** in Pass and Issue text produce a warning to rewrite: may, might, possibly, could potentially, consider, perhaps, it seems.
 - **Every check ID** in `framework/checks.md` must appear exactly once. Missing IDs fail the build.
 - **Extra checks** you add get IDs with an `X` prefix (X1, X2, ...) in the most relevant section. Mention them in the method notes.
-- The crawler access matrix, engine dependency table and verdict counts are generated from the data files. Do not retype them.
+- **No `sources` key.** Every check already prints the standard behind it from
+  `framework/references.json`, so a second list at the end repeats it.
+- **The executive summary is a headline and at most two short paragraphs**, then
+  `top_issues`. Anything longer gets skipped.
+- The crawler access matrix, engine dependency table, crawled URL list and verdict counts are generated from the data files. Do not retype them.

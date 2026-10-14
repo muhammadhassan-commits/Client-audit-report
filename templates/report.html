@@ -191,6 +191,13 @@ code { font-family: var(--mono); font-size: .88em; background: var(--tint); padd
 /* Evidence citation */
 .src { display: block; margin-top: 6px; font-family: var(--mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
 .src::before { content: "source: "; }
+/* Addresses inside a finding are clickable, so the reader can check the page
+   the finding is about without retyping it. */
+a.u { color: var(--brand); text-decoration: underline; text-decoration-thickness: 1px;
+      text-underline-offset: 2px; overflow-wrap: anywhere; }
+a.u:hover { color: var(--brand-hover); }
+a.u:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 2px; }
+.lede { color: var(--ink-2); max-width: 72ch; margin: 0 0 20px; }
 /* Deep links */
 td.id a.anchor { color: var(--brand); text-decoration: none; }
 td.id a.anchor:hover { text-decoration: underline; }

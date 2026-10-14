@@ -115,9 +115,32 @@ def split_source(text):
     return prose, m.group(1)
 
 
+URL_IN_TEXT = re.compile(r"https?://[^\s<>\"']+")
+
+
+def linkify(escaped):
+    """Turn every address in already-escaped prose into a link you can click.
+
+    The report is read away from the site, so an address the reader has to
+    retype is an address they do not check. Trailing punctuation is left out of
+    the link, because "ends at https://example.com/about." should not link to a
+    full stop.
+    """
+    def one(m):
+        url = m.group(0)
+        tail = ""
+        while url and url[-1] in ".,;:)]":
+            tail = url[-1] + tail
+            url = url[:-1]
+        if not url:
+            return m.group(0)
+        return (f'<a class="u" href="{url}" target="_blank" rel="noopener">{url}</a>{tail}')
+    return URL_IN_TEXT.sub(one, escaped)
+
+
 def evidence_html(text):
     prose, src = split_source(text)
-    out = E(prose)
+    out = linkify(E(prose))
     if src:
         out += f'<span class="src" title="Evidence file">{E(src)}</span>'
     return out
@@ -218,6 +241,46 @@ def screenshot_section(domain):
             cards.append(f'<div class="shotrow"><h3>{E(slug_to_url(domain, slug))}</h3>'
                          f'<div class="shots">{"".join(pair)}</div></div>')
     return "".join(cards), len(cards)
+
+
+def crawled_section(domain, fd):
+    """The list of pages the audit actually read, with status, title and size.
+
+    A client asked which URLs were checked, and the honest answer has to come
+    from the evidence rather than from the method note, which is why this reads
+    crawl.jsonl and the saved page set rather than anything hand written.
+    """
+    rows = {}
+    for line in (OUT_ROOT / domain / "data" / "crawl.jsonl").read_text(
+            encoding="utf-8").splitlines() if (OUT_ROOT / domain / "data" / "crawl.jsonl").is_file() else []:
+        try:
+            r = json.loads(line)
+        except ValueError:
+            continue
+        if r.get("url"):
+            rows[r["url"]] = {"status": r.get("status"), "title": r.get("title"),
+                              "words": r.get("word_count")}
+    pages = load_json(domain, "pages_summary.json") or {}
+    for url, r in pages.items():
+        keep = rows.get(url) or {}
+        rows[url] = {"status": r.get("status") or keep.get("status"),
+                     "title": r.get("title") or keep.get("title"),
+                     "words": r.get("words") or keep.get("words")}
+    rows = {u: r for u, r in rows.items() if r.get("status")}
+    if not rows:
+        return "", 0
+    out = []
+    for url in sorted(rows):
+        r = rows[url]
+        st = str(r.get("status") or "")
+        cls = "is-ok" if st == "200" else "is-bad"
+        words = f'{r["words"]:,} words' if r.get("words") else ""
+        out.append(f'<tr><td><a class="u" href="{E(url)}" target="_blank" rel="noopener">'
+                   f'{E(url)}</a></td><td><span class="pill {cls}">{E(st)}</span></td>'
+                   f'<td>{E(r.get("title") or "")}</td><td class="num">{E(words)}</td></tr>')
+    return (f'<table class="checks"><thead><tr><th>URL</th><th>Status</th><th>Title</th>'
+            f'<th class="num">Length</th></tr></thead><tbody>{"".join(out)}</tbody></table>',
+            len(rows))
 
 
 def slug_to_url(domain, slug):
@@ -389,14 +452,15 @@ def build(domain):
             vcell = pill(c["verdict"], "v-" + v) + (" " + pill(c["severity"], "s-" + sev) if c["verdict"] == "Issue" else "")
             ev = evidence_html(c.get("evidence", ""))
             if c["verdict"] == "Needs client data":
-                ev = (ev + "<br>" if ev else "") + "<b>Data needed:</b> " + E(c.get("needs", ""))
+                ev = (ev + "<br>" if ev else "") + "<b>Data needed:</b> " + linkify(E(c.get("needs", "")))
             fx = ""
             if c["verdict"] == "Issue":
-                fx = f"<span class='imp'><b>Impact:</b> {E(c['impact'])}</span>{E(c['fix'])}"
+                fx = (f"<span class='imp'><b>Impact:</b> {linkify(E(c['impact']))}</span>"
+                      f"{linkify(E(c['fix']))}")
             elif c["verdict"] == "Pass":
-                fx = E(c.get("fix") or "No change needed.")
+                fx = linkify(E(c.get("fix") or "No change needed."))
             else:
-                fx = E(c.get("fix", ""))
+                fx = linkify(E(c.get("fix", "")))
             # Every check is its own anchor, so the summary, the action plan
             # and a pasted link all land on the exact row.
             anchor = "c-" + c["id"]
@@ -429,10 +493,13 @@ def build(domain):
         ps = "".join(f"<li>{E(p)}</li>" for p in fd["prompt_set"])
         body.append(f'<section class="sec" id="prompts" data-title="Prompts to track"><h2>Prompts to track in Wellows</h2><ol>{ps}</ol></section>')
         toc.append(("prompts", "", "Prompts to track", 0))
-    if fd.get("sources"):
-        src = "".join(f'<li><a href="{E(s["url"])}" target="_blank" rel="noopener">{E(s["title"])}</a></li>' for s in fd["sources"])
-        body.append(f'<section class="sec" id="sources" data-title="Sources"><h2>Sources</h2><ul>{src}</ul></section>')
-        toc.append(("sources", "", "Sources", 0))
+    crawled_html, n_crawled = crawled_section(domain, fd)
+    if crawled_html:
+        body.append(f'<section class="sec" id="crawled" data-title="Crawled URLs">'
+                    f'<h2>Crawled URLs</h2><p class="lede">Every page this audit read, with the '
+                    f'status it returned. Each address opens in a new tab.</p>'
+                    f'{crawled_html}</section>')
+        toc.append(("crawled", "", "Crawled URLs", n_crawled))
 
     toc_html = "".join(f'<li><a href="#{i}" data-t="{i}"><span class="n">{E(n)}</span><span>{E(t)}</span>'
                        f'<span class="c">{c if c else ""}</span></a></li>' for i, n, t, c in toc)
