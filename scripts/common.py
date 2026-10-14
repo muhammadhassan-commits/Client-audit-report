@@ -47,7 +47,11 @@ CHROME_UA = (
     "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
 )
 DEFAULT_TIMEOUT = 25
-MAX_RPS = 2.0  # polite ceiling for every script
+# Polite ceiling for every script. Small hosts on shared Apache often drop a
+# client that opens more than a handful of connections, and the whole audit then
+# collects timeouts instead of evidence. Lower it with AUDIT_MAX_RPS, for
+# example AUDIT_MAX_RPS=0.2 for one request every five seconds.
+MAX_RPS = float(os.environ.get("AUDIT_MAX_RPS") or 2.0)
 
 CHALLENGE_MARKERS = [
     "just a moment", "cf-chl", "challenge-platform", "attention required",
