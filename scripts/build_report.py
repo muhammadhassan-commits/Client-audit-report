@@ -252,6 +252,7 @@ def screenshot_section(domain):
 
 # Status colours, the same ones the stacked bar uses, so a reader who learns the
 # legend once can read every chart in the report.
+HIDDEN_SECTIONS = {"L"}      # rendered nowhere, so nothing may link to them
 C_PASS, C_CRIT, C_HIGH = "#10B981", "#9F1239", "#E11D48"
 C_MED, C_LOW, C_NEED, C_NT = "#D97706", "#94A3B8", "#F59E0B", "#CBD5E1"
 
@@ -327,6 +328,8 @@ def overview_section(domain, fd, allc, vc, sc):
     # Where the issues actually are. This is the part that saves the scrolling.
     rows = []
     for sec_ in fd["sections"]:
+        if sec_["id"] in HIDDEN_SECTIONS:
+            continue
         n = sum(1 for c in sec_["checks"] if c["verdict"] == "Issue")
         urgent = sum(1 for c in sec_["checks"]
                      if c["verdict"] == "Issue" and c.get("severity") in ("Critical", "High"))
@@ -584,15 +587,12 @@ def build(domain):
         scope = (f'<p class="scope">This audit read <b>{n_crawled}</b> '
                  f'{"page" if n_crawled == 1 else "pages"} of {E(domain)}. '
                  f'<a href="#crawled">See every URL that was checked</a>.</p>')
-    body.append(f'<section class="sec" id="summary" data-title="Executive summary"><h2>Executive summary</h2>'
-                f'<div class="summary-grid"><div class="prose">{paras}{scope}</div>'
-                f'<aside class="glance"><h3>At a glance</h3><dl>{glance_html}</dl></aside></div>'
-                f'<h3>Top issues to fix first</h3><ol class="top">{top}</ol></section>')
-    toc.append(('summary', '', 'Executive summary', 0))
+    # The charts open the report. The executive summary, its At a glance panel
+    # and the top-issue list were all restating counts the Overview now draws.
     body.append('<section class="sec" id="overview" data-title="Overview">'
                 '<h2>Overview</h2><p class="lede">The whole audit at a glance. '
                 'Every bar below is a link: click it to open the checks it counts.</p>'
-                + overview_section(domain, fd, allc, vc, sc) + '</section>')
+                + overview_section(domain, fd, allc, vc, sc) + scope + '</section>')
     toc.append(("overview", "", "Overview", 0))
     if crawled_html:
         body.append(f'<section class="sec" id="crawled" data-title="Crawled URLs">'
@@ -616,21 +616,7 @@ def build(domain):
                     f'<td class="id">{check_links(a.get("checks"))}</td>'
                     f'<td>{E(a.get("owner", ""))}</td></tr>'
                     for a in sorted(fd["actions"], key=lambda a: a["priority"]))
-    body.append('<section class="sec" id="plan" data-title="What to do, in order"><h2>What to do, in order</h2>'
-                '<p class="intro">P0: this week. P1: within 30 days. P2: this quarter. '
-                'Each check number links to the finding it came from.</p>'
-                '<div class="table-wrap"><table><thead><tr><th>Priority</th><th>Action</th><th>Checks</th><th>Owner</th></tr></thead>'
-                f'<tbody>{arows}</tbody></table></div></section>')
-    toc.append(("plan", "", "What to do, in order", 0))
 
-    shots_html, n_shots = screenshot_section(domain)
-    if shots_html:
-        body.append('<section class="sec" id="shots" data-title="How the pages render">'
-                    '<h2>How the pages render</h2>'
-                    '<p class="intro">Captured during the audit with a real browser engine, '
-                    'desktop beside mobile, straight from the live site.</p>'
-                    f'{shots_html}</section>')
-        toc.append(("shots", "", "How the pages render", 0))
     js_html, n_js = js_section(domain)
     if js_html:
         body.append('<section class="sec" id="js" data-title="With and without JavaScript">'
@@ -655,6 +641,8 @@ def build(domain):
     toc.append(("detail", "", "Every check in full", 0))
 
     for s in fd["sections"]:
+        if s["id"] in HIDDEN_SECTIONS:
+            continue
         sid = "s-" + s["id"].lower()
         n_issue = sum(1 for c in s["checks"] if c["verdict"] == "Issue")
         rows = []
@@ -695,12 +683,6 @@ def build(domain):
 
     meth = fd.get("method", {})
     notes = "".join(f"<li>{E(n)}</li>" for n in meth.get("notes", []))
-    body.append(f'<section class="sec" id="method" data-title="Scope and method"><h2>Scope and method</h2>'
-                f'<p>Domain: <b>{E(fd["domain"])}</b>. Audit date: {E(fd["audit_date"])}. Pages crawled: {E(str(meth.get("pages_crawled", "")))}. '
-                f'Checks reported: {len(allc)}.</p><ul>{notes}</ul>'
-                '<p>Verdicts: <b>Pass</b> means measured and no change is needed. <b>Issue</b> carries a severity, the evidence, the impact and the exact fix. '
-                '<b>Needs client data</b> names the dashboard required. <b>Not tested</b> and <b>Not applicable</b> give the reason.</p></section>')
-    toc.append(('method', '', 'Scope and method', 0))
     if fd.get("prompt_set"):
         ps = "".join(f"<li>{E(p)}</li>" for p in fd["prompt_set"])
         body.append(f'<section class="sec" id="prompts" data-title="Prompts to track"><h2>Prompts to track in Wellows</h2><ol>{ps}</ol></section>')
