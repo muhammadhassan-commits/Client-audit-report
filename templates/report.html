@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- A client report is not public material. If it is ever put on a web server,
+     or shared through a link that a crawler can reach, it must stay out of
+     every index. -->
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow">
 <title>%%TITLE%%</title>
 <!-- Built to the Wellows design system. One brand blue #0452F0, one typeface
      (Parkinsans, inlined below as base64 so the report keeps the brand face
@@ -64,6 +69,20 @@ a { color: var(--brand); text-underline-offset: 4px; }
   padding: 4px 12px; border-radius: 9999px; white-space: nowrap; }
 .track { height: 3px; background: var(--line); position: relative; }
 .fill { height: 100%; width: 0; background: var(--brand); }
+
+/* Booking call to action, in the bar beside the reading progress. It sits
+   inside the existing 68px bar, so the bar keeps its height and its sticky
+   behaviour. The touch target is 44px, which fits with room to spare. */
+.cta { display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 18px; border-radius: 12px; flex: 0 0 auto;
+  font-family: var(--font); font-size: 14px; font-weight: 600; line-height: 1;
+  white-space: nowrap; text-decoration: none; color: #FFFFFF;
+  background: var(--brand); transition: background-color 200ms ease-out, box-shadow 200ms ease-out; }
+.cta:hover, .cta:focus { background: var(--deep); text-decoration: none; }
+.cta:focus-visible { outline: 2px solid #FFFFFF; outline-offset: -4px;
+  box-shadow: 0 0 0 4px rgba(4,82,240,0.35); }
+.cta-short { display: none; }
+@media (prefers-reduced-motion: reduce) { .cta { transition: none; } }
 
 /* Hero: pale wash, dark text. Never white text on this gradient. */
 .hero { background: linear-gradient(to bottom, var(--blue-surface), #fff);
@@ -240,12 +259,37 @@ a.ref:hover { text-decoration: none; }
 #totop.show { opacity: 1; visibility: visible; }
 #totop:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(4,82,240,0.28); }
 @media (prefers-reduced-motion: reduce) { #totop { transition: none; } #totop:hover { transform: none; } }
-@media print { #totop, .topbar, .toc, .filters { display: none; } .wrap { grid-template-columns: 1fr; } }
+/* Print and PDF export. The bar itself goes, because a fixed element repeats on
+   every page, but the booking link stays and prints its address, so a reader
+   working from paper or a PDF can still reach it. */
+@media print {
+  #totop, .toc, .filters { display: none; }
+  .wrap { grid-template-columns: 1fr; }
+  .topbar { position: static; border: 0; background: none; backdrop-filter: none; box-shadow: none; }
+  .topbar .track, .topbar .mark, .topbar .where, .topbar .pct { display: none; }
+  .topbar-inner { height: auto; justify-content: flex-end; padding-block: 8px; }
+  .cta { color: var(--brand) !important; background: none !important; padding: 0;
+         min-height: 0; font-weight: 600; }
+  .cta::after { content: " (" attr(href) ")"; font-weight: 400; color: var(--ink-2); }
+  .cta-short { display: none !important; }
+  .cta-full { display: inline !important; }
+}
 
 @media (max-width: 1023px) {
   .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .toc { display: none; }
   .hero h1 { font-size: 32px; line-height: 36px; }
+  /* Shorter label once the bar gets tight, so nothing overlaps the progress pill. */
+  .cta-full { display: none; }
+  .cta-short { display: inline; }
+  .cta { padding: 0 14px; }
+}
+@media (max-width: 639px) {
+  .topbar-inner { gap: 10px; }
+  /* .where carries flex:1 and pushes the right-hand group across, so the CTA
+     takes over that job once the breadcrumb is hidden. */
+  .where { display: none; }
+  .cta { margin-left: auto; padding: 0 12px; font-size: 13px; }
 }
 </style>
 </head>
@@ -254,6 +298,12 @@ a.ref:hover { text-decoration: none; }
   <div class="shell topbar-inner">
     <div class="mark"><i aria-hidden="true"></i><span>Wellows</span></div>
     <div class="where" id="where"><b>Start</b></div>
+    <a class="cta" href="https://calendly.com/technical-audit-by-wellows/website-audit"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Schedule Your Free Audit Call, opens in a new tab">
+      <span class="cta-full">Schedule Your Free Audit Call</span>
+      <span class="cta-short">Free Audit Call</span>
+    </a>
     <div class="pct" id="pct">0% read</div>
   </div>
   <div class="track" role="progressbar" aria-label="Report read" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="track"><div class="fill" id="fill"></div></div>
