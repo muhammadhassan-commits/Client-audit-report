@@ -102,7 +102,7 @@ a { color: var(--brand); text-underline-offset: 4px; }
 .key b { color: var(--ink); font-weight: 600; }
 .b-pass { background: #10B981; } .b-crit { background: #9F1239; } .b-high { background: #E11D48; }
 .b-med { background: #D97706; } .b-low { background: #94A3B8; } .b-need { background: #F59E0B; }
-.b-nt { background: #CBD5E1; }
+.b-nt { background: #CBD5E1; } .b-na { background: #94A3B8; }
 
 /* Body layout */
 .wrap { display: grid; grid-template-columns: 252px minmax(0, 1fr); gap: 48px;
@@ -121,6 +121,7 @@ main { min-width: 0; }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 24px;
   position: sticky; top: calc(var(--bar-h) + 1px); z-index: 40; background: #fff; padding-block: 12px; }
 .filters h3 { margin: 0 8px 0 0; }
+.chip b { font-weight: 600; opacity: .65; margin-left: 2px; }
 .chip { font: inherit; font-size: 14px; font-weight: 600; line-height: 1; border: 1px solid var(--line);
   background: #fff; color: var(--strong); border-radius: 12px; padding: 10px 16px; cursor: pointer;
   box-shadow: 0 1px 2px rgba(16,24,40,0.05); transition: border-color 200ms ease-out, color 200ms ease-out; }
@@ -374,11 +375,7 @@ a.ref:hover { text-decoration: none; }
   <main id="main">
     <div class="filters" role="group" aria-label="Filter checks">
       <h3>Show</h3>
-      <button class="chip" data-f="all" aria-pressed="true">All checks</button>
-      <button class="chip" data-f="issue" aria-pressed="false">Issues</button>
-      <button class="chip" data-f="urgent" aria-pressed="false">Critical and High</button>
-      <button class="chip" data-f="pass" aria-pressed="false">Passing</button>
-      <button class="chip" data-f="need" aria-pressed="false">Needs client data</button>
+      %%FILTERS%%
       <span id="fcount" aria-live="polite"></span>
     </div>
 %%BODY%%

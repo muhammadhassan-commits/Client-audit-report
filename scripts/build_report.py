@@ -547,7 +547,8 @@ def build(domain):
             print("ERROR", e)
         sys.exit(1)
 
-    allc = [c for s in fd["sections"] for c in s["checks"]]
+    shown = [s for s in fd["sections"] if s["id"] not in HIDDEN_SECTIONS]
+    allc = [c for s in shown for c in s["checks"]]
     vc = collections.Counter(c["verdict"] for c in allc)
     sc = collections.Counter(c.get("severity") for c in allc if c["verdict"] == "Issue")
     # One stacked bar of the whole audit, with a legend under it. Reads at a
@@ -555,7 +556,8 @@ def build(domain):
     bands = [("pass", vc["Pass"], "Pass"), ("crit", sc["Critical"], "Critical"),
              ("high", sc["High"], "High"), ("med", sc["Medium"], "Medium"),
              ("low", sc["Low"], "Low"), ("need", vc["Needs client data"], "Needs data"),
-             ("nt", vc["Not tested"] + vc["Not applicable"], "Not tested")]
+             ("nt", vc["Not tested"], "Not tested"),
+             ("na", vc["Not applicable"], "Not applicable")]
     bands = [b for b in bands if b[1]]
     total = sum(n for _, n, _ in bands) or 1
     segs = "".join(f'<span class="seg b-{c}" style="width:{n / total * 100:.4f}%" '
@@ -715,6 +717,16 @@ def build(domain):
 
     toc_html = "".join(f'<li><a href="#{i}" data-t="{i}"><span class="n">{E(n)}</span><span>{E(t)}</span>'
                        f'<span class="c">{c if c else ""}</span></a></li>' for i, n, t, c in toc)
+    urgent_n = sc["Critical"] + sc["High"]
+    chips = [("all", "All checks", len(allc)),
+             ("issue", "Issues found", vc["Issue"]),
+             ("urgent", "Fix first: Critical and High", urgent_n),
+             ("pass", "Passing, no action needed", vc["Pass"]),
+             ("need", "Needs data from you", vc["Needs client data"])]
+    filters_html = "".join(
+        f'<button class="chip" data-f="{k}" aria-pressed="{"true" if k == "all" else "false"}">'
+        f'{E(label)} <b>{n}</b></button>' for k, label, n in chips)
+
     tpl = (KIT_DIR / "templates" / "report.html").read_text(encoding="utf-8")
     client = fd["client_name"]
     out = (tpl.replace("%%FONTS%%", font_face_css())
@@ -723,6 +735,7 @@ def build(domain):
               .replace("%%H1%%", f"Can every search and AI engine reach <em>{E(fd['domain'])}</em>?")
               .replace("%%HEADLINE%%", E(es["headline"]))
               .replace("%%TILES%%", tiles_html).replace("%%TOC%%", toc_html)
+              .replace("%%FILTERS%%", filters_html)
               .replace("%%BODY%%", "\n".join(body)).replace("%%CLIENT%%", E(client)))
     rd = OUT_ROOT / domain / "report"
     rd.mkdir(parents=True, exist_ok=True)
