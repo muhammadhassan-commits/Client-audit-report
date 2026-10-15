@@ -9,6 +9,7 @@ import collections
 import html
 import io
 import json
+import math
 import re
 import sys
 
@@ -249,6 +250,129 @@ def screenshot_section(domain):
     return "".join(cards), len(cards)
 
 
+# Status colours, the same ones the stacked bar uses, so a reader who learns the
+# legend once can read every chart in the report.
+C_PASS, C_CRIT, C_HIGH = "#10B981", "#9F1239", "#E11D48"
+C_MED, C_LOW, C_NEED, C_NT = "#D97706", "#94A3B8", "#F59E0B", "#CBD5E1"
+
+
+def donut(segments, size=140, stroke=18, centre=None, sub=None):
+    """An SVG ring chart. No script, no library: it has to render with
+    JavaScript off and survive being printed."""
+    total = sum(v for _, v, _ in segments) or 1
+    r = (size - stroke) / 2
+    circ = 2 * math.pi * r
+    off, parts = 0.0, []
+    for label, v, col in segments:
+        if not v:
+            continue
+        frac = v / total
+        parts.append(
+            f'<circle cx="{size/2}" cy="{size/2}" r="{r:.2f}" fill="none" stroke="{col}" '
+            f'stroke-width="{stroke}" stroke-dasharray="{circ*frac:.2f} {circ:.2f}" '
+            f'stroke-dashoffset="{-circ*off:.2f}" transform="rotate(-90 {size/2} {size/2})">'
+            f'<title>{E(label)}: {v}</title></circle>')
+        off += frac
+    mid = ""
+    if centre is not None:
+        mid = (f'<text x="{size/2}" y="{size/2 - (2 if sub else -6)}" class="dnum" '
+               f'text-anchor="middle">{E(str(centre))}</text>')
+        if sub:
+            mid += (f'<text x="{size/2}" y="{size/2 + 20}" class="dsub" '
+                    f'text-anchor="middle">{E(sub)}</text>')
+    return (f'<svg class="donut" viewBox="0 0 {size} {size}" width="{size}" height="{size}" '
+            f'role="img" aria-hidden="true">{"".join(parts)}{mid}</svg>')
+
+
+def overview_section(domain, fd, allc, vc, sc):
+    """A dashboard of the whole audit, where every bar is a link to the detail.
+
+    The counts and the stacked bar told a reader how much was wrong but not
+    where, so finding the worst area meant scrolling 18 sections. Each row here
+    jumps straight to the section it names.
+    """
+    issues = vc["Issue"]
+    judged = vc["Pass"] + issues
+    score = round(100 * vc["Pass"] / judged) if judged else 0
+    band = "Good" if score >= 80 else "Fair" if score >= 50 else "Poor"
+    bandcls = "is-ok" if score >= 80 else "is-warn" if score >= 50 else "is-bad"
+
+    health = (f'<div class="ocard"><h3>Health score</h3>'
+              f'{donut([("Passing", vc["Pass"], C_PASS), ("Issues", issues, C_HIGH)], centre=score, sub=band)}'
+              f'<p class="onote">{vc["Pass"]} of {judged} checks that could be judged are '
+              f'passing. <span class="{bandcls}">{E(band)}</span></p></div>')
+
+    verd = [("Pass", vc["Pass"], C_PASS, "pass"), ("Issues", issues, C_HIGH, "issue"),
+            ("Needs client data", vc["Needs client data"], C_NEED, "need"),
+            ("Not tested", vc["Not tested"], C_NT, "nt"),
+            ("Not applicable", vc["Not applicable"], C_LOW, "na")]
+    vkeys = "".join(
+        f'<li><a href="#detail" data-filter="{k}"><i style="background:{c}"></i>'
+        f'<span>{E(l)}</span><b>{n}</b></a></li>'
+        for l, n, c, k in verd if n)
+    verdict = (f'<div class="ocard"><h3>Every check</h3>'
+               f'{donut([(l, n, c) for l, n, c, _ in verd], centre=len(allc), sub="checks")}'
+               f'<ul class="okeys">{vkeys}</ul></div>')
+
+    sevs = [("Critical", sc["Critical"], C_CRIT), ("High", sc["High"], C_HIGH),
+            ("Medium", sc["Medium"], C_MED), ("Low", sc["Low"], C_LOW)]
+    smax = max([n for _, n, _ in sevs] + [1])
+    srows = "".join(
+        f'<li><a href="#detail" data-filter="{l.lower()}"><span class="olab">{E(l)}</span>'
+        f'<span class="otrack"><i style="width:{n/smax*100:.1f}%;background:{c}"></i></span>'
+        f'<b>{n}</b></a></li>' for l, n, c in sevs if n)
+    sev = (f'<div class="ocard ocard-wide"><h3>Issues by severity</h3>'
+           f'<ul class="obars">{srows}</ul></div>')
+
+    # Where the issues actually are. This is the part that saves the scrolling.
+    rows = []
+    for sec_ in fd["sections"]:
+        n = sum(1 for c in sec_["checks"] if c["verdict"] == "Issue")
+        urgent = sum(1 for c in sec_["checks"]
+                     if c["verdict"] == "Issue" and c.get("severity") in ("Critical", "High"))
+        if n:
+            rows.append((n, urgent, sec_["id"], sec_["title"]))
+    rows.sort(key=lambda r: (-r[0], -r[1]))
+    amax = max([r[0] for r in rows] + [1])
+    arows = "".join(
+        f'<li><a href="#s-{sid.lower()}"><span class="olab">{E(title)}</span>'
+        f'<span class="otrack"><i style="width:{n/amax*100:.1f}%;background:'
+        f'{C_HIGH if urgent else C_MED}"></i></span><b>{n}</b>'
+        f'<em>{f"{urgent} urgent" if urgent else ""}</em></a></li>'
+        for n, urgent, sid, title in rows)
+    areas = (f'<div class="ocard ocard-wide"><h3>Where the issues are</h3>'
+             f'<p class="onote">Every row opens that section.</p>'
+             f'<ul class="obars obars-link">{arows}</ul></div>')
+
+    status = ""
+    counts = collections.Counter()
+    seen = {}
+    jl = OUT_ROOT / domain / "data" / "crawl.jsonl"
+    if jl.is_file():
+        for line in jl.read_text(encoding="utf-8").splitlines():
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            if r.get("url") and r.get("status"):
+                seen[r["url"]] = r["status"]
+    for url, r in (load_json(domain, "pages_summary.json") or {}).items():
+        if r.get("status"):
+            seen[url] = r["status"]
+    for st in seen.values():
+        counts[f"{str(st)[0]}xx"] += 1
+    if counts:
+        order = [("2xx", C_PASS), ("3xx", C_MED), ("4xx", C_HIGH), ("5xx", C_CRIT)]
+        segs = [(f"{k} responses", counts.get(k, 0), c) for k, c in order]
+        keys = "".join(f'<li><i style="background:{c}"></i><span>{k}</span>'
+                       f'<b>{counts.get(k, 0)}</b></li>' for k, c in order if counts.get(k))
+        status = (f'<div class="ocard"><h3>Crawled URL status</h3>'
+                  f'{donut(segs, centre=sum(counts.values()), sub="URLs")}'
+                  f'<ul class="okeys">{keys}</ul></div>')
+
+    return f'<div class="ogrid">{health}{verdict}{status}{sev}{areas}</div>'
+
+
 def crawled_section(domain, fd):
     """The list of pages the audit actually read, with status, title and size.
 
@@ -465,6 +589,11 @@ def build(domain):
                 f'<aside class="glance"><h3>At a glance</h3><dl>{glance_html}</dl></aside></div>'
                 f'<h3>Top issues to fix first</h3><ol class="top">{top}</ol></section>')
     toc.append(('summary', '', 'Executive summary', 0))
+    body.append('<section class="sec" id="overview" data-title="Overview">'
+                '<h2>Overview</h2><p class="lede">The whole audit at a glance. '
+                'Every bar below is a link: click it to open the checks it counts.</p>'
+                + overview_section(domain, fd, allc, vc, sc) + '</section>')
+    toc.append(("overview", "", "Overview", 0))
     if crawled_html:
         body.append(f'<section class="sec" id="crawled" data-title="Crawled URLs">'
                     f'<h2>Crawled URLs</h2><p class="lede">Every page this audit read, with the '

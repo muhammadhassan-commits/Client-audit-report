@@ -226,6 +226,47 @@ a.u:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border
 .scope { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line);
          color: var(--ink-2); max-width: 72ch; }
 .scope a { color: var(--brand); }
+
+/* Overview dashboard. Cards are a definition of the audit, not decoration:
+   every bar is a link into the section it counts. Drawn as inline SVG so it
+   renders with JavaScript off and prints. */
+.ogrid { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 720px) { .ogrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .ogrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ocard-wide { grid-column: span 3; } }
+.ocard { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 24px;
+  display: flex; flex-direction: column; align-items: center; text-align: center; }
+.ocard-wide { align-items: stretch; text-align: left; }
+.ocard h3 { font-size: 15px; font-weight: 600; color: var(--ink-2); margin: 0 0 16px;
+  letter-spacing: .01em; }
+.donut { display: block; margin: 0 auto 14px; }
+.dnum { font-size: 30px; font-weight: 700; fill: var(--strong); font-family: var(--font); }
+.dsub { font-size: 12px; fill: var(--ink-2); font-family: var(--font); }
+.onote { font-size: 13px; color: var(--ink-2); margin: 0; }
+.ocard-wide .onote { margin: -8px 0 14px; }
+.okeys { list-style: none; margin: 0; padding: 0; width: 100%; }
+.okeys li, .okeys li a { display: flex; align-items: center; gap: 8px; font-size: 13px;
+  padding: 5px 0; color: var(--ink); text-decoration: none; }
+.okeys li a { width: 100%; border-radius: 8px; padding: 5px 6px; }
+.okeys li a:hover { background: var(--blue-fill); }
+.okeys i { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.okeys span { flex: 1; text-align: left; }
+.okeys b { font-variant-numeric: tabular-nums; }
+.obars { list-style: none; margin: 0; padding: 0; }
+.obars li a { display: grid; grid-template-columns: minmax(96px, 210px) 1fr 3ch 72px 14px;
+  align-items: center; gap: 14px; padding: 0 8px; min-height: 40px; border-radius: 8px;
+  color: var(--ink); text-decoration: none; }
+.obars li a:hover { background: var(--blue-fill); }
+.obars li a:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.olab { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.otrack { background: var(--tint); border-radius: 9999px; height: 10px; overflow: hidden; }
+.otrack i { display: block; height: 100%; border-radius: 9999px; }
+.obars b { font-variant-numeric: tabular-nums; font-size: 15px; min-width: 2ch; text-align: right; }
+.obars em { font-style: normal; font-size: 12px; color: var(--bad); white-space: nowrap; }
+.obars-link li a::after { content: "\\2192"; color: var(--brand); opacity: 0; transition: opacity 200ms ease-out; }
+.obars-link li a:hover::after, .obars-link li a:focus-visible::after { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .obars-link li a::after { transition: none; } }
+.is-warn { color: var(--warn); font-weight: 600; }
 /* Deep links */
 td.id a.anchor { color: var(--brand); text-decoration: none; }
 td.id a.anchor:hover { text-decoration: underline; }
@@ -396,10 +437,28 @@ a.ref:hover { text-decoration: none; }
     }
     update();
   }
-  chips.forEach(function (c) { c.addEventListener('click', function () {
-    chips.forEach(function (x) { x.setAttribute('aria-pressed', x === c ? 'true' : 'false'); });
-    applyFilter(c.dataset.f);
-  }); });
+  function press(f) {
+    var hit = null;
+    chips.forEach(function (x) {
+      var on = x.dataset.f === f;
+      if (on) hit = x;
+      x.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (hit) applyFilter(f);
+    return !!hit;
+  }
+  chips.forEach(function (c) { c.addEventListener('click', function () { press(c.dataset.f); }); });
+
+  // Overview legend rows set the filter as well as jumping to the checks. The
+  // href already points at #detail, so this only enriches a link that works
+  // without script.
+  var MAP = {pass: 'pass', issue: 'issue', need: 'need', critical: 'urgent', high: 'urgent'};
+  document.querySelectorAll('#overview a[data-filter]').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var f = MAP[a.dataset.filter];
+      if (f) press(f);
+    });
+  });
 })();
 </script>
 </body>
