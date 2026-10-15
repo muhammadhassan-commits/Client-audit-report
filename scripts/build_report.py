@@ -465,6 +465,12 @@ def build(domain):
                 f'<aside class="glance"><h3>At a glance</h3><dl>{glance_html}</dl></aside></div>'
                 f'<h3>Top issues to fix first</h3><ol class="top">{top}</ol></section>')
     toc.append(('summary', '', 'Executive summary', 0))
+    if crawled_html:
+        body.append(f'<section class="sec" id="crawled" data-title="Crawled URLs">'
+                    f'<h2>Crawled URLs</h2><p class="lede">Every page this audit read, with the '
+                    f'status it returned. Each address opens in a new tab.</p>'
+                    f'{crawled_html}</section>')
+        toc.append(("crawled", "", "Crawled URLs", n_crawled))
 
     # Client reading order: what to do, then the evidence, then the detail.
     # The full check tables and the method notes are reference material and sit
@@ -570,12 +576,6 @@ def build(domain):
         ps = "".join(f"<li>{E(p)}</li>" for p in fd["prompt_set"])
         body.append(f'<section class="sec" id="prompts" data-title="Prompts to track"><h2>Prompts to track in Wellows</h2><ol>{ps}</ol></section>')
         toc.append(("prompts", "", "Prompts to track", 0))
-    if crawled_html:
-        body.append(f'<section class="sec" id="crawled" data-title="Crawled URLs">'
-                    f'<h2>Crawled URLs</h2><p class="lede">Every page this audit read, with the '
-                    f'status it returned. Each address opens in a new tab.</p>'
-                    f'{crawled_html}</section>')
-        toc.append(("crawled", "", "Crawled URLs", n_crawled))
 
     toc_html = "".join(f'<li><a href="#{i}" data-t="{i}"><span class="n">{E(n)}</span><span>{E(t)}</span>'
                        f'<span class="c">{c if c else ""}</span></a></li>' for i, n, t, c in toc)
