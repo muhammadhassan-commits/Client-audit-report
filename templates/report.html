@@ -267,6 +267,18 @@ a.u:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border
 .obars-link li a:hover::after, .obars-link li a:focus-visible::after { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .obars-link li a::after { transition: none; } }
 .is-warn { color: var(--warn); font-weight: 600; }
+
+/* In-page booking panels. Same link and same button as the bar, set on the
+   sanctioned blue surface so it reads as an offer rather than a stray control. */
+.ctapanel { margin-top: 32px; display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 20px; padding: 24px 28px;
+  background: var(--blue-surface); border-radius: 12px; }
+.ctapanel h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--strong); }
+.ctapanel p { margin: 0; color: var(--ink-2); font-size: 14px; max-width: 62ch; }
+.cta-panel { flex: 0 0 auto; }
+@media (max-width: 639px) { .ctapanel { padding: 20px; }
+  .cta-panel { width: 100%; } }
+@media print { .ctapanel { background: none; border: 1px solid var(--line); } }
 /* Deep links */
 td.id a.anchor { color: var(--brand); text-decoration: none; }
 td.id a.anchor:hover { text-decoration: underline; }

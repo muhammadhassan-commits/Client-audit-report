@@ -376,6 +376,21 @@ def overview_section(domain, fd, allc, vc, sc):
     return f'<div class="ogrid">{health}{verdict}{status}{sev}{areas}</div>'
 
 
+CTA_URL = "https://calendly.com/technical-audit-by-wellows/website-audit"
+
+
+def cta_panel(heading, line):
+    """An in-page booking panel, the same link as the one in the bar.
+
+    Built as a panel rather than a bare button so it reads as an offer in the
+    flow of the report instead of a stray control, and it keeps the sanctioned
+    blue surface rather than inventing a tint.
+    """
+    return (f'<div class="ctapanel"><div><h3>{E(heading)}</h3><p>{E(line)}</p></div>'
+            f'<a class="cta cta-panel" href="{CTA_URL}" target="_blank" rel="noopener noreferrer">'
+            f'Schedule Your Free Audit Call</a></div>')
+
+
 def crawled_section(domain, fd):
     """The list of pages the audit actually read, with status, title and size.
 
@@ -592,7 +607,11 @@ def build(domain):
     body.append('<section class="sec" id="overview" data-title="Overview">'
                 '<h2>Overview</h2><p class="lede">The whole audit at a glance. '
                 'Every bar below is a link: click it to open the checks it counts.</p>'
-                + overview_section(domain, fd, allc, vc, sc) + scope + '</section>')
+                + overview_section(domain, fd, allc, vc, sc) + scope
+                + cta_panel("Want these fixed?",
+                            "Book a call and we will walk through the findings with your "
+                            "developer and agree what gets done first.")
+                + '</section>')
     toc.append(("overview", "", "Overview", 0))
     if crawled_html:
         body.append(f'<section class="sec" id="crawled" data-title="Crawled URLs">'
@@ -683,6 +702,12 @@ def build(domain):
 
     meth = fd.get("method", {})
     notes = "".join(f"<li>{E(n)}</li>" for n in meth.get("notes", []))
+    body.append('<section class="sec" id="talk" data-title="Talk to us">'
+                + cta_panel("That is the whole audit",
+                            "Bring this report to a call and we will prioritise the fixes "
+                            "against your own goals, at no charge.")
+                + '</section>')
+    toc.append(("talk", "", "Talk to us", 0))
     if fd.get("prompt_set"):
         ps = "".join(f"<li>{E(p)}</li>" for p in fd["prompt_set"])
         body.append(f'<section class="sec" id="prompts" data-title="Prompts to track"><h2>Prompts to track in Wellows</h2><ol>{ps}</ol></section>')
