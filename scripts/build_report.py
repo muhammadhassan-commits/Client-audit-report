@@ -301,7 +301,9 @@ def overview_section(domain, fd, allc, vc, sc):
     health = (f'<div class="ocard"><h3>Health score</h3>'
               f'{donut([("Passing", vc["Pass"], C_PASS), ("Issues", issues, C_HIGH)], centre=score, sub=band)}'
               f'<p class="onote">{vc["Pass"]} of {judged} checks that could be judged are '
-              f'passing. <span class="{bandcls}">{E(band)}</span></p></div>')
+              f'passing. <span class="{bandcls}">{E(band)}</span><br>'
+              f'<a class="olink" href="#detail" data-filter="pass">See what is passing</a>'
+              f'</p></div>')
 
     verd = [("Pass", vc["Pass"], C_PASS, "pass"), ("Issues", issues, C_HIGH, "issue"),
             ("Needs client data", vc["Needs client data"], C_NEED, "need"),
@@ -367,8 +369,11 @@ def overview_section(domain, fd, allc, vc, sc):
     if counts:
         order = [("2xx", C_PASS), ("3xx", C_MED), ("4xx", C_HIGH), ("5xx", C_CRIT)]
         segs = [(f"{k} responses", counts.get(k, 0), c) for k, c in order]
-        keys = "".join(f'<li><i style="background:{c}"></i><span>{k}</span>'
-                       f'<b>{counts.get(k, 0)}</b></li>' for k, c in order if counts.get(k))
+        # Every other legend row in this dashboard opens something, so these do
+        # too: the status rows go to the list of URLs they count.
+        keys = "".join(f'<li><a href="#crawled"><i style="background:{c}"></i>'
+                       f'<span>{k} responses</span><b>{counts.get(k, 0)}</b></a></li>'
+                       for k, c in order if counts.get(k))
         status = (f'<div class="ocard"><h3>Crawled URL status</h3>'
                   f'{donut(segs, centre=sum(counts.values()), sub="URLs")}'
                   f'<ul class="okeys">{keys}</ul></div>')
@@ -712,8 +717,16 @@ def build(domain):
     toc.append(("talk", "", "Talk to us", 0))
     if fd.get("prompt_set"):
         ps = "".join(f"<li>{E(p)}</li>" for p in fd["prompt_set"])
-        body.append(f'<section class="sec" id="prompts" data-title="Prompts to track"><h2>Prompts to track in Wellows</h2><ol>{ps}</ol></section>')
-        toc.append(("prompts", "", "Prompts to track", 0))
+        body.append(
+            '<section class="sec" id="prompts" data-title="Questions we will track">'
+            '<h2>Questions we will track</h2>'
+            '<p class="lede">These are the questions a customer actually types, into Google '
+            'and into assistants such as ChatGPT, Perplexity and Gemini. We record today '
+            'whether an answer names you, then ask the same questions again after the fixes '
+            'in this report are live. That is how the work gets measured: not by a ranking '
+            'position, but by whether the engines start naming you when somebody asks.</p>'
+            f'<ol class="prompts">{ps}</ol></section>')
+        toc.append(("prompts", "", "Questions we will track", 0))
 
     toc_html = "".join(f'<li><a href="#{i}" data-t="{i}"><span class="n">{E(n)}</span><span>{E(t)}</span>'
                        f'<span class="c">{c if c else ""}</span></a></li>' for i, n, t, c in toc)
