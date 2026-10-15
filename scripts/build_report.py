@@ -373,7 +373,8 @@ def overview_section(domain, fd, allc, vc, sc):
                   f'{donut(segs, centre=sum(counts.values()), sub="URLs")}'
                   f'<ul class="okeys">{keys}</ul></div>')
 
-    return f'<div class="ogrid">{health}{verdict}{status}{sev}{areas}</div>'
+    return (f'<div class="ogrid ogrid-rings">{health}{verdict}{status}</div>',
+            f'<div class="ogrid">{sev}{areas}</div>')
 
 
 CTA_URL = "https://calendly.com/technical-audit-by-wellows/website-audit"
@@ -604,10 +605,11 @@ def build(domain):
                  f'<a href="#crawled">See every URL that was checked</a>.</p>')
     # The charts open the report. The executive summary, its At a glance panel
     # and the top-issue list were all restating counts the Overview now draws.
+    rings_html, bars_html = overview_section(domain, fd, allc, vc, sc)
     body.append('<section class="sec" id="overview" data-title="Overview">'
-                '<h2>Overview</h2><p class="lede">The whole audit at a glance. '
+                '<h2>Overview</h2><p class="lede">Where the issues sit. '
                 'Every bar below is a link: click it to open the checks it counts.</p>'
-                + overview_section(domain, fd, allc, vc, sc) + scope
+                + bars_html + scope
                 + cta_panel("Want these fixed?",
                             "Book a call and we will walk through the findings with your "
                             "developer and agree what gets done first.")
@@ -722,7 +724,7 @@ def build(domain):
               .replace("%%DATE%%", E(fd["audit_date"]))
               .replace("%%H1%%", f"Can every search and AI engine reach <em>{E(fd['domain'])}</em>?")
               .replace("%%HEADLINE%%", E(es["headline"]))
-              .replace("%%TILES%%", tiles_html).replace("%%TOC%%", toc_html)
+              .replace("%%TILES%%", rings_html).replace("%%TOC%%", toc_html)
               .replace("%%BODY%%", "\n".join(body)).replace("%%CLIENT%%", E(client)))
     rd = OUT_ROOT / domain / "report"
     rd.mkdir(parents=True, exist_ok=True)

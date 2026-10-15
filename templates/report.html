@@ -234,6 +234,15 @@ a.u:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border
 @media (min-width: 720px) { .ogrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1100px) { .ogrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ocard-wide { grid-column: span 3; } }
+/* The three rings live in the hero. They sit on the pale wash, so the cards
+   stay white and align to the top rather than stretching to the tallest. */
+.ogrid-rings { margin-top: 36px; align-items: stretch; }
+@media (min-width: 720px) { .ogrid-rings { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ogrid-rings .ocard { box-shadow: 0 1px 2px rgba(16,24,40,0.04); justify-content: flex-start; }
+/* The verdict legend stays in one column: two made "Needs client data" and
+   "Not applicable" wrap onto three lines each. The cards share a height and
+   align to the top, so the three headings and the three rings line up across
+   the row; the card with the longest legend simply fills more of its box. */
 .ocard { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 24px;
   display: flex; flex-direction: column; align-items: center; text-align: center; }
 .ocard-wide { align-items: stretch; text-align: left; }
