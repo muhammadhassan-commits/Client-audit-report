@@ -135,7 +135,7 @@ def main(domain):
                     # that sits in the DOM behind opacity 0 or under a preloader
                     # still counts in page.content(), which is how a homepage
                     # that renders as a blank spinner once scored 80 percent.
-                    entry.setdefault("painted", {})[label] = page.evaluate("""() => {
+                    entry.setdefault("painted", {})[label] = page.evaluate(r"""() => {
                       const seen = e => { const s = getComputedStyle(e);
                         return s.display !== 'none' && s.visibility !== 'hidden' && +s.opacity > 0.05
                                && e.getBoundingClientRect().height > 0; };
